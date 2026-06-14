@@ -1,0 +1,224 @@
+﻿@page "/checkout"
+@attribute [Authorize]
+@rendermode InteractiveServer
+@using System.Security.Claims
+@inject NavigationManager Nav
+@inject IOrderService OrderService
+@inject IPharmacyService PharmacyService
+@inject IProductService ProductService
+@inject CartState CartState
+@inject AuthenticationStateProvider AuthStateProvider
+
+<PageTitle>Оформление заказа</PageTitle>
+
+<div class="container mt-4" style="max-width: 800px;">
+    <h2 class="mb-4">Оформление заказа</h2>
+
+    @if (isProcessing)
+    {
+        <div class="text-center py-5">
+            <div class="spinner-border text-success" role="status"></div>
+            <p class="mt-2">Оформление заказа...</p>
+        </div>
+    }
+    else if (!string.IsNullOrEmpty(successMessage))
+    {
+        <div class="alert alert-success text-center">
+            <h4>@successMessage</h4>
+            <p>Ваш заказ успешно создан. Следить за статусом можно в личном кабинете.</p>
+            <a href="/profile" class="btn btn-outline-success mt-2 me-2">Мои заказы</a>
+            <a href="/" class="btn btn-outline-secondary mt-2">На главную</a>
+        </div>
+    }
+    else if (!cartItems.Any())
+    {
+        <div class="alert alert-warning">
+            Ваша корзина пуста. <a href="/catalog">Перейти в каталог</a>
+        </div>
+    }
+    else
+    {
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <div class="alert alert-danger">@errorMessage</div>
+        }
+
+        <!-- Состав заказа -->
+        <div class="card mb-3 shadow-sm">
+            <div class="card-header bg-white fw-bold">Состав заказа</div>
+            <ul class="list-group list-group-flush">
+                @foreach (var (product, qty) in cartItems)
+                {
+                    <li class="list-group-item d-flex justify-content-between">
+                        <span>@product.Name × @qty</span>
+                        <span>@((product.Price * qty).ToString("C"))</span>
+                    </li>
+                }
+                <li class="list-group-item d-flex justify-content-between fw-bold">
+                    <span>Итого</span>
+                    <span>@totalAmount.ToString("C")</span>
+                </li>
+            </ul>
+        </div>
+
+        <EditForm Model="@orderModel" OnValidSubmit="HandleSubmit">
+            <DataAnnotationsValidator />
+
+            <!-- Выбор аптеки -->
+            <div class="card mb-3 shadow-sm">
+                <div class="card-header bg-white fw-bold">1. Выберите аптеку самовывоза</div>
+                <div class="card-body">
+                    @if (pharmacies == null)
+                    {
+                        <p>Загрузка аптек...</p>
+                    }
+                    else if (!pharmacies.Any())
+                    {
+                        <p class="text-muted">Нет доступных аптек.</p>
+                    }
+                    else
+                    {
+                        <InputRadioGroup @bind-Value="orderModel.PharmacyId">
+                            @foreach (var pharmacy in pharmacies)
+                            {
+                                <div class="form-check border p-2 rounded mb-2">
+                                    <InputRadio Value="@pharmacy.Id" class="form-check-input" />
+                                    <label class="form-check-label w-100 cursor-pointer">
+                                        <strong>@pharmacy.Name</strong><br />
+                                        <small class="text-muted">@pharmacy.Address</small>
+                                        @if (!string.IsNullOrEmpty(pharmacy.WorkingHours))
+                                        {
+                                            <br />
+                                            <small class="text-muted">Часы работы: @pharmacy.WorkingHours</small>
+                                        }
+                                    </label>
+                                </div>
+                            }
+                        </InputRadioGroup>
+                    }
+                </div>
+            </div>
+
+            <!-- Данные клиента -->
+            <div class="card mb-3 shadow-sm">
+                <div class="card-header bg-white fw-bold">2. Ваши данные</div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label">ФИО</label>
+                        <InputText class="form-control" @bind-Value="orderModel.CustomerName" />
+                        <ValidationMessage For="() => orderModel.CustomerName" class="text-danger small" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Телефон</label>
+                        <InputText class="form-control" @bind-Value="orderModel.CustomerPhone" />
+                        <ValidationMessage For="() => orderModel.CustomerPhone" class="text-danger small" />
+                    </div>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-success btn-lg w-100 fw-bold" disabled="@(orderModel.PharmacyId == 0)">
+                Подтвердить заказ
+            </button>
+            @if (orderModel.PharmacyId == 0)
+            {
+                <div class="text-danger small mt-1">Выберите аптеку самовывоза.</div>
+            }
+        </EditForm>
+    }
+</div>
+
+@code {
+    private List<AptekaDiplom2.Models.Pharmacy>? pharmacies;
+    private List<(AptekaDiplom2.Models.Product product, int qty)> cartItems = new();
+    private decimal totalAmount;
+    private bool isProcessing = false;
+    private string? successMessage;
+    private string? errorMessage;
+    private int userId;
+
+    private class OrderInputModel
+    {
+        public int PharmacyId { get; set; }
+
+        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Укажите ФИО")]
+        public string CustomerName { get; set; } = "";
+
+        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Укажите телефон")]
+        [System.ComponentModel.DataAnnotations.Phone(ErrorMessage = "Некорректный номер телефона")]
+        public string CustomerPhone { get; set; } = "";
+    }
+    private OrderInputModel orderModel = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        pharmacies = await PharmacyService.GetAllPharmaciesAsync();
+
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var idClaim = authState.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (int.TryParse(idClaim, out var id))
+        {
+            userId = id;
+        }
+        orderModel.CustomerName = authState.User.FindFirst(ClaimTypes.Name)?.Value ?? "";
+
+        await LoadCart();
+    }
+
+    private async Task LoadCart()
+    {
+        cartItems.Clear();
+        totalAmount = 0;
+
+        if (CartState.Items.Any())
+        {
+            var allProducts = await ProductService.GetAllProductsAsync();
+            foreach (var (productId, qty) in CartState.Items)
+            {
+                var product = allProducts.FirstOrDefault(p => p.Id == productId);
+                if (product != null)
+                {
+                    cartItems.Add((product, qty));
+                    totalAmount += product.Price * qty;
+                }
+            }
+        }
+    }
+
+    private async Task HandleSubmit()
+    {
+        errorMessage = null;
+
+        if (orderModel.PharmacyId == 0)
+        {
+            errorMessage = "Выберите аптеку самовывоза.";
+            return;
+        }
+
+        isProcessing = true;
+
+        var newOrder = new AptekaDiplom2.Models.Order
+        {
+            UserId = userId,
+            PharmacyId = orderModel.PharmacyId,
+            CustomerName = orderModel.CustomerName,
+            CustomerPhone = orderModel.CustomerPhone,
+            OrderDate = DateTime.Now
+        };
+
+        var productsToReserve = new Dictionary<int, int>(CartState.Items);
+
+        var result = await OrderService.CreateOrderAsync(newOrder, productsToReserve);
+
+        if (result.Success)
+        {
+            successMessage = $"Заказ №{result.OrderId} оформлен!";
+            CartState.Clear();
+        }
+        else
+        {
+            errorMessage = result.Message;
+        }
+
+        isProcessing = false;
+    }
+}

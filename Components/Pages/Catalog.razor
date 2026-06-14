@@ -1,0 +1,149 @@
+@page "/catalog"
+@rendermode InteractiveServer
+@inject IProductService ProductService
+@inject CartState CartState
+
+<PageTitle>Каталог препаратов</PageTitle>
+
+<h1>Каталог лекарственных препаратов</h1>
+
+<div class="row g-2 mb-3 p-3 bg-light rounded">
+    <div class="col-md-4">
+        <label class="form-label small mb-1">Поиск</label>
+        <input class="form-control" @bind="filter.SearchTerm" @bind:event="oninput" placeholder="Название, вещество, производитель..." />
+    </div>
+    <div class="col-md-2">
+        <label class="form-label small mb-1">Производитель</label>
+        <select class="form-select" @bind="filter.Manufacturer">
+            <option value="">Все</option>
+            @foreach (var m in manufacturers)
+            {
+                <option value="@m">@m</option>
+            }
+        </select>
+    </div>
+    <div class="col-md-2">
+        <label class="form-label small mb-1">Действ. вещество</label>
+        <select class="form-select" @bind="filter.ActiveIngredient">
+            <option value="">Все</option>
+            @foreach (var a in activeIngredients)
+            {
+                <option value="@a">@a</option>
+            }
+        </select>
+    </div>
+    <div class="col-md-1">
+        <label class="form-label small mb-1">Цена от</label>
+        <input type="number" min="0" class="form-control" @bind="filter.MinPrice" />
+    </div>
+    <div class="col-md-1">
+        <label class="form-label small mb-1">Цена до</label>
+        <input type="number" min="0" class="form-control" @bind="filter.MaxPrice" />
+    </div>
+    <div class="col-md-2 d-flex align-items-end gap-2">
+        <button class="btn btn-primary w-100" @onclick="ApplyFilters">Найти</button>
+        <button class="btn btn-outline-secondary w-100" @onclick="ResetFilters">Сброс</button>
+    </div>
+</div>
+
+@if (isLoading)
+{
+    <p>Загрузка данных из базы...</p>
+}
+else if (!products.Any())
+{
+    <div class="alert alert-warning">Товары не найдены.</div>
+}
+else
+{
+    <table class="table table-striped table-hover align-middle">
+        <thead>
+            <tr>
+                <th>Название</th>
+                <th>Производитель</th>
+                <th>Действ. вещество</th>
+                <th>Цена</th>
+                <th>Рецепт</th>
+                <th>Действие</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var product in products)
+            {
+                <tr>
+                    <td>
+                        <strong>@product.Name</strong>
+                        @if (!string.IsNullOrWhiteSpace(product.Description))
+                        {
+                            <div class="text-muted small">@product.Description</div>
+                        }
+                    </td>
+                    <td>@product.Manufacturer</td>
+                    <td>@product.ActiveIngredient</td>
+                    <td>@product.Price.ToString("C")</td>
+                    <td>
+                        @if (product.IsPrescriptionRequired)
+                        {
+                            <span class="badge bg-danger">По рецепту</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-success">Без рецепта</span>
+                        }
+                    </td>
+                    <td>
+                        <button type="button" class="btn btn-sm btn-success" @onclick="() => AddToCart(product.Id)">
+                            В корзину
+                        </button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@if (!string.IsNullOrEmpty(addedMessage))
+{
+    <div class="alert alert-success">@addedMessage</div>
+}
+
+@code {
+    private List<AptekaDiplom2.Models.Product> products = new();
+    private List<string> manufacturers = new();
+    private List<string> activeIngredients = new();
+    private ProductFilter filter = new();
+    private bool isLoading = true;
+    private string? addedMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        manufacturers = await ProductService.GetManufacturersAsync();
+        activeIngredients = await ProductService.GetActiveIngredientsAsync();
+        await LoadProducts();
+    }
+
+    private async Task LoadProducts()
+    {
+        isLoading = true;
+        products = await ProductService.FilterProductsAsync(filter);
+        isLoading = false;
+    }
+
+    private async Task ApplyFilters()
+    {
+        await LoadProducts();
+    }
+
+    private async Task ResetFilters()
+    {
+        filter = new ProductFilter();
+        await LoadProducts();
+    }
+
+    private void AddToCart(int id)
+    {
+        CartState.AddToCart(id);
+        var product = products.FirstOrDefault(p => p.Id == id);
+        addedMessage = $"«{product?.Name}» добавлен в корзину.";
+    }
+}

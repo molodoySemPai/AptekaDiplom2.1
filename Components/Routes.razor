@@ -1,0 +1,27 @@
+﻿<Router AppAssembly="typeof(Program).Assembly">
+    <Found Context="routeData">
+        <AuthorizeRouteView RouteData="routeData" DefaultLayout="typeof(AptekaDiplom2.Components.Layout.MainLayout)">
+            <NotAuthorized>
+                <LayoutView Layout="typeof(AptekaDiplom2.Components.Layout.MainLayout)">
+                    <div class="alert alert-warning m-4">
+                        <h4>Доступ запрещён</h4>
+                        <p>Для просмотра этой страницы необходимо войти в систему с соответствующими правами.</p>
+                        <a href="/login" class="btn btn-primary">Войти</a>
+                    </div>
+                </LayoutView>
+            </NotAuthorized>
+            <Authorizing>
+                <LayoutView Layout="typeof(AptekaDiplom2.Components.Layout.MainLayout)">
+                    <p class="m-4">Проверка прав доступа...</p>
+                </LayoutView>
+            </Authorizing>
+        </AuthorizeRouteView>
+        <FocusOnNavigate RouteData="routeData" Selector="h1" />
+    </Found>
+    <NotFound>
+        <PageTitle>Не найдено</PageTitle>
+        <LayoutView Layout="typeof(AptekaDiplom2.Components.Layout.MainLayout)">
+            <p role="alert" class="m-4">Извините, эта страница не существует.</p>
+        </LayoutView>
+    </NotFound>
+</Router>

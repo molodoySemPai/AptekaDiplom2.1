@@ -1,0 +1,165 @@
+﻿@page "/admin/pharmacies"
+@attribute [Authorize(Roles = "Admin")]
+@rendermode InteractiveServer
+@inject IPharmacyService PharmacyService
+
+<PageTitle>Управление аптеками</PageTitle>
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2>Аптечные точки</h2>
+        <a href="/admin" class="btn btn-outline-secondary btn-sm">← В админ-панель</a>
+    </div>
+
+    @if (!string.IsNullOrEmpty(message))
+    {
+        <div class="alert @(isError ? "alert-danger" : "alert-success")">@message</div>
+    }
+
+    <div class="card mb-4 shadow-sm">
+        <div class="card-header bg-white fw-bold">@(editingId == null ? "Добавить аптеку" : $"Редактировать аптеку #{editingId}")</div>
+        <div class="card-body">
+            <EditForm Model="@model" OnValidSubmit="HandleSubmit">
+                <DataAnnotationsValidator />
+                <div class="row g-2">
+                    <div class="col-md-4">
+                        <label class="form-label">Название*</label>
+                        <InputText class="form-control" @bind-Value="model.Name" />
+                        <ValidationMessage For="() => model.Name" class="text-danger small" />
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Адрес*</label>
+                        <InputText class="form-control" @bind-Value="model.Address" />
+                        <ValidationMessage For="() => model.Address" class="text-danger small" />
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Телефон</label>
+                        <InputText class="form-control" @bind-Value="model.Phone" />
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Часы работы</label>
+                        <InputText class="form-control" @bind-Value="model.WorkingHours" />
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <button type="submit" class="btn btn-primary">@(editingId == null ? "Добавить" : "Сохранить")</button>
+                    @if (editingId != null)
+                    {
+                        <button type="button" class="btn btn-outline-secondary ms-2" @onclick="ResetForm">Отмена</button>
+                    }
+                </div>
+            </EditForm>
+        </div>
+    </div>
+
+    @if (isLoading)
+    {
+        <p>Загрузка...</p>
+    }
+    else
+    {
+        <table class="table table-striped align-middle">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Название</th>
+                    <th>Адрес</th>
+                    <th>Телефон</th>
+                    <th>Часы работы</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var p in pharmacies)
+                {
+                    <tr>
+                        <td>@p.Id</td>
+                        <td>@p.Name</td>
+                        <td>@p.Address</td>
+                        <td>@p.Phone</td>
+                        <td>@p.WorkingHours</td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary" @onclick="() => EditPharmacy(p)">Изм.</button>
+                            <button class="btn btn-sm btn-outline-danger" @onclick="() => DeletePharmacy(p.Id)">Удал.</button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</div>
+
+@code {
+    private List<AptekaDiplom2.Models.Pharmacy> pharmacies = new();
+    private bool isLoading = true;
+    private int? editingId;
+    private string? message;
+    private bool isError;
+
+    private AptekaDiplom2.Models.Pharmacy model = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadPharmacies();
+    }
+
+    private async Task LoadPharmacies()
+    {
+        isLoading = true;
+        pharmacies = await PharmacyService.GetAllPharmaciesAsync();
+        isLoading = false;
+    }
+
+    private void EditPharmacy(AptekaDiplom2.Models.Pharmacy p)
+    {
+        editingId = p.Id;
+        model = new AptekaDiplom2.Models.Pharmacy
+        {
+            Id = p.Id,
+            Name = p.Name,
+            Address = p.Address,
+            Phone = p.Phone,
+            WorkingHours = p.WorkingHours
+        };
+    }
+
+    private void ResetForm()
+    {
+        editingId = null;
+        model = new AptekaDiplom2.Models.Pharmacy();
+    }
+
+    private async Task HandleSubmit()
+    {
+        if (editingId == null)
+        {
+            await PharmacyService.CreatePharmacyAsync(model);
+            message = $"Аптека «{model.Name}» добавлена.";
+        }
+        else
+        {
+            model.Id = editingId.Value;
+            await PharmacyService.UpdatePharmacyAsync(model);
+            message = $"Аптека «{model.Name}» обновлена.";
+        }
+        isError = false;
+        ResetForm();
+        await LoadPharmacies();
+    }
+
+    private async Task DeletePharmacy(int id)
+    {
+        var ok = await PharmacyService.DeletePharmacyAsync(id);
+        if (ok)
+        {
+            message = "Аптека удалена.";
+            isError = false;
+        }
+        else
+        {
+            message = "Не удалось удалить аптеку: с ней связаны заказы или остатки товаров.";
+            isError = true;
+        }
+        await LoadPharmacies();
+    }
+}

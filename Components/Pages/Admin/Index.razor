@@ -1,0 +1,48 @@
+﻿@page "/admin"
+@attribute [Authorize(Roles = "Admin")]
+
+<PageTitle>Администрирование</PageTitle>
+
+<div class="container mt-4">
+    <h2>Панель администратора</h2>
+    <p class="text-muted">Управление каталогом, аптечными точками, остатками и заказами.</p>
+
+    <div class="row g-3 mt-3">
+        <div class="col-md-3">
+            <a href="/admin/products" class="card text-decoration-none shadow-sm h-100">
+                <div class="card-body text-center">
+                    <div style="font-size: 2rem;">💊</div>
+                    <h5 class="card-title mt-2">Товары</h5>
+                    <p class="text-muted small mb-0">Каталог препаратов</p>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-3">
+            <a href="/admin/pharmacies" class="card text-decoration-none shadow-sm h-100">
+                <div class="card-body text-center">
+                    <div style="font-size: 2rem;">🏥</div>
+                    <h5 class="card-title mt-2">Аптеки</h5>
+                    <p class="text-muted small mb-0">Точки самовывоза</p>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-3">
+            <a href="/admin/stocks" class="card text-decoration-none shadow-sm h-100">
+                <div class="card-body text-center">
+                    <div style="font-size: 2rem;">📦</div>
+                    <h5 class="card-title mt-2">Остатки</h5>
+                    <p class="text-muted small mb-0">Складские запасы</p>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-3">
+            <a href="/admin/orders" class="card text-decoration-none shadow-sm h-100">
+                <div class="card-body text-center">
+                    <div style="font-size: 2rem;">📋</div>
+                    <h5 class="card-title mt-2">Заказы</h5>
+                    <p class="text-muted small mb-0">Обработка и статусы</p>
+                </div>
+            </a>
+        </div>
+    </div>
+</div>

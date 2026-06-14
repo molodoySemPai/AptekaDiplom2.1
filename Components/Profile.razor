@@ -1,0 +1,91 @@
+﻿@page "/profile"
+@attribute [Authorize]
+@rendermode InteractiveServer
+@using Microsoft.AspNetCore.Authorization
+@using System.Security.Claims
+@inject IOrderService OrderService
+@inject AuthenticationStateProvider AuthStateProvider
+
+<PageTitle>Личный кабинет</PageTitle>
+
+<div class="container mt-4">
+    <h2>Личный кабинет</h2>
+
+    @if (currentUser != null)
+    {
+        <div class="card mb-4 shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title mb-2">@(currentUser.FindFirst(ClaimTypes.Name)?.Value)</h5>
+                <p class="mb-0 text-muted">Email: @(currentUser.FindFirst(ClaimTypes.Email)?.Value)</p>
+            </div>
+        </div>
+    }
+
+    <h4 class="mb-3">История заказов</h4>
+
+    @if (isLoading)
+    {
+        <p>Загрузка...</p>
+    }
+    else if (!orders.Any())
+    {
+        <div class="alert alert-info">У вас пока нет заказов. <a href="/catalog">Перейти в каталог</a></div>
+    }
+    else
+    {
+        @foreach (var order in orders)
+        {
+            <div class="card mb-3 shadow-sm">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center flex-wrap">
+                    <div>
+                        <strong>Заказ №@order.Id</strong>
+                        <span class="text-muted ms-2">от @order.OrderDate.ToString("dd.MM.yyyy HH:mm")</span>
+                    </div>
+                    <span class="badge @GetStatusBadgeClass(order.Status) fs-6">@OrderStatus.ToDisplayName(order.Status)</span>
+                </div>
+                <div class="card-body">
+                    <p class="mb-1"><strong>Аптека самовывоза:</strong> @order.Pharmacy?.Name (@order.Pharmacy?.Address)</p>
+                    <ul class="list-unstyled mb-2">
+                        @foreach (var item in order.OrderItems)
+                        {
+                            <li>@(item.Product?.Name ?? $"Товар #{item.ProductId}") — @item.Quantity шт. × @item.UnitPrice.ToString("C")</li>
+                        }
+                    </ul>
+                    <p class="mb-0 fw-bold">Итого: @order.TotalAmount.ToString("C")</p>
+                </div>
+            </div>
+        }
+    }
+</div>
+
+@code {
+    private List<Order> orders = new();
+    private bool isLoading = true;
+    private ClaimsPrincipal? currentUser;
+    private int userId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        currentUser = authState.User;
+
+        var idClaim = currentUser.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (int.TryParse(idClaim, out var id))
+        {
+            userId = id;
+            orders = await OrderService.GetOrdersByUserAsync(userId);
+        }
+
+        isLoading = false;
+    }
+
+    private string GetStatusBadgeClass(string status) => status switch
+    {
+        OrderStatus.New => "bg-secondary",
+        OrderStatus.Processing => "bg-primary",
+        OrderStatus.Ready => "bg-warning text-dark",
+        OrderStatus.Completed => "bg-success",
+        OrderStatus.Cancelled => "bg-danger",
+        _ => "bg-secondary"
+    };
+}

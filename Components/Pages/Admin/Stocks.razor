@@ -1,0 +1,149 @@
+﻿@page "/admin/stocks"
+@attribute [Authorize(Roles = "Admin")]
+@rendermode InteractiveServer
+@inject IStockService StockService
+@inject IProductService ProductService
+@inject IPharmacyService PharmacyService
+
+<PageTitle>Управление остатками</PageTitle>
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2>Остатки на складах</h2>
+        <a href="/admin" class="btn btn-outline-secondary btn-sm">← В админ-панель</a>
+    </div>
+
+    @if (!string.IsNullOrEmpty(message))
+    {
+        <div class="alert alert-success">@message</div>
+    }
+
+    <div class="card mb-4 shadow-sm">
+        <div class="card-header bg-white fw-bold">Установить остаток</div>
+        <div class="card-body">
+            <div class="row g-2 align-items-end">
+                <div class="col-md-4">
+                    <label class="form-label">Товар</label>
+                    <select class="form-select" @bind="selectedProductId">
+                        <option value="0">— выберите —</option>
+                        @foreach (var p in products)
+                        {
+                            <option value="@p.Id">@p.Name</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Аптека</label>
+                    <select class="form-select" @bind="selectedPharmacyId">
+                        <option value="0">— выберите —</option>
+                        @foreach (var ph in pharmacies)
+                        {
+                            <option value="@ph.Id">@ph.Name</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Кол-во</label>
+                    <input type="number" min="0" class="form-control" @bind="newQuantity" />
+                </div>
+                <div class="col-md-2">
+                    <button class="btn btn-primary w-100" @onclick="SaveStock" disabled="@(selectedProductId == 0 || selectedPharmacyId == 0)">
+                        Сохранить
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if (isLoading)
+    {
+        <p>Загрузка...</p>
+    }
+    else if (!stocks.Any())
+    {
+        <div class="alert alert-info">Остатки пока не заданы.</div>
+    }
+    else
+    {
+        <table class="table table-striped align-middle">
+            <thead>
+                <tr>
+                    <th>Аптека</th>
+                    <th>Товар</th>
+                    <th>В наличии</th>
+                    <th>Зарезервировано</th>
+                    <th>Доступно</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var s in stocks)
+                {
+                    <tr>
+                        <td>@s.Pharmacy?.Name</td>
+                        <td>@s.Product?.Name</td>
+                        <td>@s.Quantity</td>
+                        <td>@s.ReservedQuantity</td>
+                        <td>@(s.Quantity - s.ReservedQuantity)</td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary" @onclick="() => EditStock(s)">Изм.</button>
+                            <button class="btn btn-sm btn-outline-danger" @onclick="() => DeleteStock(s.Id)">Удал.</button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</div>
+
+@code {
+    private List<AptekaDiplom2.Models.Stock> stocks = new();
+    private List<AptekaDiplom2.Models.Product> products = new();
+    private List<AptekaDiplom2.Models.Pharmacy> pharmacies = new();
+    private bool isLoading = true;
+    private string? message;
+
+    private int selectedProductId;
+    private int selectedPharmacyId;
+    private int newQuantity;
+
+    protected override async Task OnInitializedAsync()
+    {
+        products = await ProductService.GetAllProductsAsync();
+        pharmacies = await PharmacyService.GetAllPharmaciesAsync();
+        await LoadStocks();
+    }
+
+    private async Task LoadStocks()
+    {
+        isLoading = true;
+        stocks = await StockService.GetAllStocksAsync();
+        isLoading = false;
+    }
+
+    private void EditStock(AptekaDiplom2.Models.Stock s)
+    {
+        selectedProductId = s.ProductId;
+        selectedPharmacyId = s.PharmacyId;
+        newQuantity = s.Quantity;
+    }
+
+    private async Task SaveStock()
+    {
+        await StockService.SetStockQuantityAsync(selectedProductId, selectedPharmacyId, newQuantity);
+        var productName = products.FirstOrDefault(p => p.Id == selectedProductId)?.Name;
+        var pharmacyName = pharmacies.FirstOrDefault(p => p.Id == selectedPharmacyId)?.Name;
+        message = $"Остаток «{productName}» в аптеке «{pharmacyName}» обновлён: {newQuantity} шт.";
+        selectedProductId = 0;
+        selectedPharmacyId = 0;
+        newQuantity = 0;
+        await LoadStocks();
+    }
+
+    private async Task DeleteStock(int id)
+    {
+        await StockService.DeleteStockAsync(id);
+        message = "Запись удалена.";
+        await LoadStocks();
+    }
+}

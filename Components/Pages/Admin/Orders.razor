@@ -1,0 +1,121 @@
+﻿@page "/admin/orders"
+@attribute [Authorize(Roles = "Admin")]
+@rendermode InteractiveServer
+@inject IOrderService OrderService
+
+<PageTitle>Управление заказами</PageTitle>
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2>Заказы</h2>
+        <a href="/admin" class="btn btn-outline-secondary btn-sm">← В админ-панель</a>
+    </div>
+
+    @if (!string.IsNullOrEmpty(message))
+    {
+        <div class="alert alert-success">@message</div>
+    }
+
+    <div class="mb-3">
+        <label class="form-label me-2">Фильтр по статусу:</label>
+        <select class="form-select d-inline-block w-auto" @bind="statusFilter" @bind:after="ApplyFilter">
+            <option value="">Все</option>
+            @foreach (var s in OrderStatus.All)
+            {
+                <option value="@s">@OrderStatus.ToDisplayName(s)</option>
+            }
+        </select>
+    </div>
+
+    @if (isLoading)
+    {
+        <p>Загрузка...</p>
+    }
+    else if (!filteredOrders.Any())
+    {
+        <div class="alert alert-info">Заказов не найдено.</div>
+    }
+    else
+    {
+        @foreach (var order in filteredOrders)
+        {
+            <div class="card mb-3 shadow-sm">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center flex-wrap">
+                    <div>
+                        <strong>Заказ №@order.Id</strong>
+                        <span class="text-muted ms-2">от @order.OrderDate.ToString("dd.MM.yyyy HH:mm")</span>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="badge @GetStatusBadgeClass(order.Status) fs-6">@OrderStatus.ToDisplayName(order.Status)</span>
+                        <select class="form-select form-select-sm" style="width: auto;"
+                                @bind="order.Status" @bind:after="() => ChangeStatus(order)">
+                            @foreach (var s in OrderStatus.All)
+                            {
+                                <option value="@s">@OrderStatus.ToDisplayName(s)</option>
+                            }
+                        </select>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <p class="mb-1"><strong>Клиент:</strong> @order.CustomerName, @order.CustomerPhone</p>
+                    <p class="mb-1"><strong>Аптека самовывоза:</strong> @order.Pharmacy?.Name (@order.Pharmacy?.Address)</p>
+                    <ul class="list-unstyled mb-2">
+                        @foreach (var item in order.OrderItems)
+                        {
+                            <li>@(item.Product?.Name ?? $"Товар #{item.ProductId}") — @item.Quantity шт. × @item.UnitPrice.ToString("C")</li>
+                        }
+                    </ul>
+                    <p class="mb-0 fw-bold">Итого: @order.TotalAmount.ToString("C")</p>
+                </div>
+            </div>
+        }
+    }
+</div>
+
+@code {
+    private List<AptekaDiplom2.Models.Order> orders = new();
+    private List<AptekaDiplom2.Models.Order> filteredOrders = new();
+    private bool isLoading = true;
+    private string statusFilter = "";
+    private string? message;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadOrders();
+    }
+
+    private async Task LoadOrders()
+    {
+        isLoading = true;
+        orders = await OrderService.GetAllOrdersAsync();
+        ApplyFilter();
+        isLoading = false;
+    }
+
+    private void ApplyFilter()
+    {
+        filteredOrders = string.IsNullOrEmpty(statusFilter)
+            ? orders
+            : orders.Where(o => o.Status == statusFilter).ToList();
+    }
+
+    private async Task ChangeStatus(AptekaDiplom2.Models.Order order)
+    {
+        var ok = await OrderService.UpdateOrderStatusAsync(order.Id, order.Status);
+        if (ok)
+        {
+            message = $"Статус заказа №{order.Id} изменён на «{OrderStatus.ToDisplayName(order.Status)}».";
+        }
+        await LoadOrders();
+    }
+
+    private string GetStatusBadgeClass(string status) => status switch
+    {
+        OrderStatus.New => "bg-secondary",
+        OrderStatus.Processing => "bg-primary",
+        OrderStatus.Ready => "bg-warning text-dark",
+        OrderStatus.Completed => "bg-success",
+        OrderStatus.Cancelled => "bg-danger",
+        _ => "bg-secondary"
+    };
+}
