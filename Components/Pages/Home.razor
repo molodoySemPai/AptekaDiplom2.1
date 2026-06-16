@@ -1,15 +1,10 @@
 ﻿@page "/"
+@inject NavigationManager Nav
 
-<PageTitle>Главная</PageTitle>
-
-<h1>Добро пожаловать в Онлайн Аптеку</h1>
-
-<p>Это прототип системы заказа лекарственных препаратов (Дипломная работа).</p>
-
-<div class="alert alert-info mt-4">
-    <h4>Доступные разделы:</h4>
-    <ul>
-        <li><a href="/catalog">Каталог лекарств</a></li>
-        <li><a href="/cart">Корзина</a></li>
-    </ul>
-</div>
+@code {
+    protected override void OnInitialized()
+    {
+        // Перенаправляем пользователя на каталог сразу же
+        Nav.NavigateTo("/catalog", forceLoad: true);
+    }
+}

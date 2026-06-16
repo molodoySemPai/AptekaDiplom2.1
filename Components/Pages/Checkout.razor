@@ -11,6 +11,51 @@
 
 <PageTitle>Оформление заказа</PageTitle>
 
+<style>
+    /* Стили для кастомных радио-кнопок */
+    .custom-pharmacy-option {
+        border: 1px solid #dee2e6;
+        border-radius: 4px;
+        padding: 1rem;
+        margin-bottom: 0.5rem;
+        cursor: pointer;
+        transition: all 0.2s ease-in-out;
+        position: relative;
+    }
+
+        .custom-pharmacy-option:hover {
+            background-color: #f8f9fa;
+            border-color: #adb5bd;
+        }
+
+        /* Состояние выбранного элемента */
+        .custom-pharmacy-option.selected {
+            border-color: var(--brand-green, #00b33c);
+            background-color: #f0fff4;
+            box-shadow: 0 0 0 1px var(--brand-green, #00b33c);
+        }
+
+    /* Скрываем стандартный кружок, но оставляем его доступным для клика */
+    .custom-radio-input {
+        opacity: 0;
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        z-index: -1;
+    }
+
+    /* Галочка справа */
+    .check-icon {
+        font-size: 1.5rem;
+        color: #dee2e6; /* Серый, когда не выбран */
+        transition: color 0.2s;
+    }
+
+    .custom-pharmacy-option.selected .check-icon {
+        color: var(--brand-green, #00b33c); /* Зеленый, когда выбран */
+    }
+</style>
+
 <div class="container mt-4" style="max-width: 800px;">
     <h2 class="mb-4">Оформление заказа</h2>
 
@@ -44,7 +89,7 @@
         }
 
         <!-- Состав заказа -->
-        <div class="card mb-3 shadow-sm">
+        <div class="card mb-3 shadow-sm border-0">
             <div class="card-header bg-white fw-bold">Состав заказа</div>
             <ul class="list-group list-group-flush">
                 @foreach (var (product, qty) in cartItems)
@@ -65,7 +110,7 @@
             <DataAnnotationsValidator />
 
             <!-- Выбор аптеки -->
-            <div class="card mb-3 shadow-sm">
+            <div class="card mb-3 shadow-sm border-0">
                 <div class="card-header bg-white fw-bold">1. Выберите аптеку самовывоза</div>
                 <div class="card-body">
                     @if (pharmacies == null)
@@ -78,20 +123,36 @@
                     }
                     else
                     {
-                        <InputRadioGroup @bind-Value="orderModel.PharmacyId">
+                        <InputRadioGroup @bind-Value="orderModel.PharmacyId" Name="pharmacyGroup">
                             @foreach (var pharmacy in pharmacies)
                             {
-                                <div class="form-check border p-2 rounded mb-2">
-                                    <InputRadio Value="@pharmacy.Id" class="form-check-input" />
-                                    <label class="form-check-label w-100 cursor-pointer">
-                                        <strong>@pharmacy.Name</strong><br />
-                                        <small class="text-muted">@pharmacy.Address</small>
-                                        @if (!string.IsNullOrEmpty(pharmacy.WorkingHours))
-                                        {
-                                            <br />
-                                            <small class="text-muted">Часы работы: @pharmacy.WorkingHours</small>
-                                        }
-                                    </label>
+                                <div class="custom-pharmacy-option @(orderModel.PharmacyId == pharmacy.Id ? "selected" : "")"
+                                     @onclick="@(() => orderModel.PharmacyId = pharmacy.Id)">
+
+                                    <!-- Скрытый InputRadio (обязателен для работы EditForm) -->
+                                    <InputRadio Value="@pharmacy.Id" class="custom-radio-input" />
+
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div style="flex: 1;">
+                                            <strong class="d-block mb-1">@pharmacy.Name</strong>
+                                            <small class="text-muted d-block">@pharmacy.Address</small>
+                                            @if (!string.IsNullOrEmpty(pharmacy.WorkingHours))
+                                            {
+                                                <small class="text-muted d-block">Часы работы: @pharmacy.WorkingHours</small>
+                                            }
+                                        </div>
+                                        <!-- Галочка -->
+                                        <div class="check-icon ms-2">
+                                            @if (orderModel.PharmacyId == pharmacy.Id)
+                                            {
+                                                <span>✔</span>
+                                            }
+                                            else
+                                            {
+                                                <span>○</span>
+                                            }
+                                        </div>
+                                    </div>
                                 </div>
                             }
                         </InputRadioGroup>
@@ -100,7 +161,7 @@
             </div>
 
             <!-- Данные клиента -->
-            <div class="card mb-3 shadow-sm">
+            <div class="card mb-3 shadow-sm border-0">
                 <div class="card-header bg-white fw-bold">2. Ваши данные</div>
                 <div class="card-body">
                     <div class="mb-3">
@@ -121,7 +182,7 @@
             </button>
             @if (orderModel.PharmacyId == 0)
             {
-                <div class="text-danger small mt-1">Выберите аптеку самовывоза.</div>
+                <div class="text-danger small mt-1 text-center">Выберите аптеку самовывоза.</div>
             }
         </EditForm>
     }

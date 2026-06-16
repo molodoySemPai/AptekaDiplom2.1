@@ -8,31 +8,26 @@ using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Если вы не хотите вручную искать по всем файлам, где используется DateTime, можно заставить .NET автоматически конвертировать любое локальное время в UTC для PostgreSQL.
 AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 
-// 1. Добавляем сервисы Blazor (НОВЫЙ СТАНДАРТ)
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
-// 2. Регистрация сервиса состояния корзины
 builder.Services.AddScoped<CartState>();
 
-// 3. Настройка PostgreSQL
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// 4. Регистрация бизнес-сервисов
 builder.Services.AddScoped<IProductService, ProductService>();
 builder.Services.AddScoped<IOrderService, OrderService>();
 builder.Services.AddScoped<IPharmacyService, PharmacyService>();
 builder.Services.AddScoped<IStockService, StockService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 
-// 5. Кэширование в памяти
+
 builder.Services.AddMemoryCache();
 
-// 6. Аутентификация (Cookies)
+
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
     {
@@ -48,7 +43,7 @@ builder.Services.AddCascadingAuthenticationState();
 
 var app = builder.Build();
 
-// Настройка конвейера (Pipeline)
+
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error");
@@ -65,7 +60,7 @@ app.UseAntiforgery();
 app.UseAuthentication();
 app.UseAuthorization();
 
-// Эндпоинты для входа/регистрации/выхода (обычные POST-формы, без интерактивности)
+//Эндпоинты для входа/регистрации/выхода
 app.MapPost("/api/auth/login", async (HttpContext httpContext, IAuthService authService) =>
 {
     var form = await httpContext.Request.ReadFormAsync();
@@ -151,7 +146,7 @@ using (var scope = app.Services.CreateScope())
         
         var adminEmail = "admin@admin.ru";
         
-        // Исправленный вызов Any через стандартный LINQ
+        //Вызов Any через стандартный LINQ
         var adminExists = System.Linq.Queryable.Any(context.Users, u => u.Email == adminEmail);
 
         if (!adminExists)
@@ -159,7 +154,6 @@ using (var scope = app.Services.CreateScope())
             var adminUser = new AptekaDiplom2.Models.User
             {
                 Email = adminEmail,
-                // Оставляем пока чистый текст "admin", так как наш AuthService проверяет строки в лоб
                 PasswordHash = "admin", 
                 FullName = "Главный Администратор",
                 Phone = "+79990000000",
@@ -176,7 +170,5 @@ using (var scope = app.Services.CreateScope())
         Console.WriteLine($"--> [ОШИБКА] Не удалось создать админа при старте: {ex.Message}");
     }
 }
-// ------------------------------------------------------
-// ------------------------------------------------------
 
 app.Run();

@@ -8,7 +8,7 @@
 <PageTitle>Корзина</PageTitle>
 
 <div class="container mt-4">
-    <h2>Корзина</h2>
+    <h2 class="mb-4">Корзина</h2>
 
     @if (isLoading)
     {
@@ -22,57 +22,93 @@
     }
     else
     {
-        <table class="table align-middle">
-            <thead>
-                <tr>
-                    <th>Товар</th>
-                    <th>Цена</th>
-                    <th style="width: 160px;">Количество</th>
-                    <th>Сумма</th>
-                    <th></th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var (product, quantity) in cartProducts)
-                {
-                    <tr>
-                        <td>@product.Name</td>
-                        <td>@product.Price.ToString("C")</td>
-                        <td>
-                            <div class="input-group input-group-sm">
-                                <button class="btn btn-outline-secondary" @onclick="() => ChangeQuantity(product.Id, quantity - 1)">−</button>
-                                <input type="number" class="form-control text-center" value="@quantity"
-                                       @onchange="e => OnQuantityInput(product.Id, e.Value)" min="1" />
-                                <button class="btn btn-outline-secondary" @onclick="() => ChangeQuantity(product.Id, quantity + 1)">+</button>
-                            </div>
-                        </td>
-                        <td>@((product.Price * quantity).ToString("C"))</td>
-                        <td>
-                            <button class="btn btn-sm btn-outline-danger" @onclick="() => RemoveItem(product.Id)">Удалить</button>
-                        </td>
-                    </tr>
-                }
-            </tbody>
-            <tfoot>
-                <tr>
-                    <th colspan="3" class="text-end">Итого:</th>
-                    <th>@(totalAmount.ToString("C"))</th>
-                    <th></th>
-                </tr>
-            </tfoot>
-        </table>
+        <div class="row">
+            <!-- Список товаров занимает всю ширину -->
+            <div class="col-12">
+                <div class="card shadow-sm border-0">
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table align-middle mb-0" style="white-space: nowrap;">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th style="width: 40%;">Товар</th>
+                                        <th style="width: 15%;">Цена</th>
+                                        <th style="width: 25%;">Количество</th>
+                                        <th style="width: 15%;">Сумма</th>
+                                        <th style="width: 5%;"></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var (product, quantity) in cartProducts)
+                                    {
+                                        <tr>
+                                            <td>
+                                                <div>
+                                                    <strong>@product.Name</strong>
+                                                    @if (!string.IsNullOrWhiteSpace(product.Description))
+                                                    {
+                                                        <div class="text-muted small">@product.Description</div>
+                                                    }
+                                                </div>
+                                            </td>
+                                            <td>@product.Price.ToString("C")</td>
+                                            <td>
+                                                <div class="input-group input-group-sm" style="max-width: 140px;">
+                                                    <button class="btn btn-outline-secondary" @onclick="() => ChangeQuantity(product.Id, quantity - 1)">−</button>
+                                                    <input type="number" class="form-control text-center" value="@quantity"
+                                                           @onchange="e => OnQuantityInput(product.Id, e.Value)" min="1" />
+                                                    <button class="btn btn-outline-secondary" @onclick="() => ChangeQuantity(product.Id, quantity + 1)">+</button>
+                                                </div>
+                                            </td>
+                                            <td class="fw-bold">@((product.Price * quantity).ToString("C"))</td>
+                                            <td class="text-end">
+                                                <button class="btn btn-sm btn-outline-danger" @onclick="() => RemoveItem(product.Id)">✕</button>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                                <tfoot class="table-light">
+                                    <tr>
+                                        <td colspan="3" class="text-end fw-bold">Итого:</td>
+                                        <!-- ИЗМЕНЕНО: text-success заменен на text-primary (синий) -->
+                                        <td class="fw-bold text-primary fs-5">@(totalAmount.ToString("C"))</td>
+                                        <td></td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-        <div class="d-flex justify-content-between">
+        <div class="d-flex justify-content-between align-items-center mt-4">
             <button class="btn btn-outline-secondary" @onclick="ClearCart">Очистить корзину</button>
-            <a href="/checkout" class="btn btn-success btn-lg">Оформить заказ</a>
+            <a href="/checkout" class="btn btn-success btn-lg px-5">Оформить заказ</a>
         </div>
     }
 </div>
+
+@if (!string.IsNullOrEmpty(addedMessage))
+{
+    <div class="toast-container position-fixed bottom-0 end-0 p-3">
+        <div class="toast show align-items-center text-white bg-primary border-0" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="d-flex">
+                <div class="toast-body">
+                    @addedMessage
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close" @onclick="() => addedMessage = null"></button>
+            </div>
+        </div>
+    </div>
+}
 
 @code {
     private List<(AptekaDiplom2.Models.Product product, int quantity)> cartProducts = new();
     private decimal totalAmount;
     private bool isLoading = true;
+    private string? addedMessage;
+    private System.Threading.Timer? _toastTimer;
 
     protected override async Task OnInitializedAsync()
     {
@@ -125,15 +161,33 @@
     private void RemoveItem(int productId)
     {
         CartState.RemoveFromCart(productId);
+        addedMessage = "Товар удален из корзины.";
+        StartToastTimer();
     }
 
     private void ClearCart()
     {
         CartState.Clear();
+        addedMessage = "Корзина очищена.";
+        StartToastTimer();
+    }
+
+    private void StartToastTimer()
+    {
+        _toastTimer?.Dispose();
+        _toastTimer = new System.Threading.Timer(_ =>
+        {
+            InvokeAsync(() =>
+            {
+                addedMessage = null;
+                StateHasChanged();
+            });
+        }, null, 5000, System.Threading.Timeout.Infinite);
     }
 
     public void Dispose()
     {
         CartState.OnChange -= OnCartChanged;
+        _toastTimer?.Dispose();
     }
 }

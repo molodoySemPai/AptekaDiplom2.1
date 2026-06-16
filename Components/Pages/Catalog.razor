@@ -5,106 +5,158 @@
 
 <PageTitle>Каталог препаратов</PageTitle>
 
-<h1>Каталог лекарственных препаратов</h1>
+<h1 class="mb-4">Каталог лекарств</h1>
 
-<div class="row g-2 mb-3 p-3 bg-light rounded">
-    <div class="col-md-4">
-        <label class="form-label small mb-1">Поиск</label>
-        <input class="form-control" @bind="filter.SearchTerm" @bind:event="oninput" placeholder="Название, вещество, производитель..." />
-    </div>
-    <div class="col-md-2">
-        <label class="form-label small mb-1">Производитель</label>
-        <select class="form-select" @bind="filter.Manufacturer">
-            <option value="">Все</option>
-            @foreach (var m in manufacturers)
-            {
-                <option value="@m">@m</option>
-            }
-        </select>
-    </div>
-    <div class="col-md-2">
-        <label class="form-label small mb-1">Действ. вещество</label>
-        <select class="form-select" @bind="filter.ActiveIngredient">
-            <option value="">Все</option>
-            @foreach (var a in activeIngredients)
-            {
-                <option value="@a">@a</option>
-            }
-        </select>
-    </div>
-    <div class="col-md-1">
-        <label class="form-label small mb-1">Цена от</label>
-        <input type="number" min="0" class="form-control" @bind="filter.MinPrice" />
-    </div>
-    <div class="col-md-1">
-        <label class="form-label small mb-1">Цена до</label>
-        <input type="number" min="0" class="form-control" @bind="filter.MaxPrice" />
-    </div>
-    <div class="col-md-2 d-flex align-items-end gap-2">
-        <button class="btn btn-primary w-100" @onclick="ApplyFilters">Найти</button>
-        <button class="btn btn-outline-secondary w-100" @onclick="ResetFilters">Сброс</button>
+<!-- Фильтры -->
+<div class="card mb-4 shadow-sm border-0 bg-light">
+    <div class="card-body p-3">
+        <div class="row g-3 align-items-center">
+            <div class="col-md-4">
+                <label class="form-label small text-muted fw-bold mb-1">Поиск</label>
+                <div class="input-group">
+                    <span class="input-group-text bg-white border-end-0"><i class="bi bi-search"></i>🔍</span>
+                    <input class="form-control border-start-0 ps-0" @bind="filter.SearchTerm" @bind:event="oninput" placeholder="Название, вещество..." />
+                </div>
+            </div>
+
+            <!-- Производитель -->
+            <div class="col-md-2" style="flex: 0 0 auto; width: 10%;">
+                <label class="form-label small text-muted fw-bold mb-1">Производитель</label>
+                <select class="form-select" @bind="filter.Manufacturer">
+                    <option value="">Все</option>
+                    @foreach (var m in manufacturers)
+                    {
+                        <option value="@m">@m</option>
+                    }
+                </select>
+            </div>
+
+            <!-- Вещество -->
+            <div class="col-md-2" style="flex: 0 0 auto; width: 13%;">
+                <label class="form-label small text-muted fw-bold mb-1">Вещество</label>
+                <select class="form-select" @bind="filter.ActiveIngredient">
+                    <option value="">Все</option>
+                    @foreach (var a in activeIngredients)
+                    {
+                        <option value="@a">@a</option>
+                    }
+                </select>
+            </div>
+
+            <!-- Цена ОТ: 12.5% -->
+            <div class="col-md-1" style="flex: 0 0 auto; width: 12.5%;">
+                <label class="form-label small text-muted fw-bold mb-1">Цена от</label>
+                <div style="display: grid; grid-template-columns: 32px 1fr 32px; height: 31px; border: 1px solid #ced4da; border-radius: 4px; overflow: hidden;">
+                    <button class="btn btn-outline-secondary border-0 border-end" style="border-radius: 0; padding: 0; display: flex; align-items: center; justify-content: center;" @onclick="() => ChangePrice(1, -1)">-</button>
+                    <input type="number" min="0" class="form-control text-center border-0" @bind="filter.MinPrice" placeholder="0" style="padding: 0; -moz-appearance: textfield;" />
+                    <button class="btn btn-outline-secondary border-0 border-start" style="border-radius: 0; padding: 0; display: flex; align-items: center; justify-content: center;" @onclick="() => ChangePrice(1, 1)">+</button>
+                </div>
+            </div>
+
+            <!-- Цена -->
+            <div class="col-md-1" style="flex: 0 0 auto; width: 12.5%;">
+                <label class="form-label small text-muted fw-bold mb-1">до</label>
+                <div style="display: grid; grid-template-columns: 32px 1fr 32px; height: 31px; border: 1px solid #ced4da; border-radius: 4px; overflow: hidden;">
+                    <button class="btn btn-outline-secondary border-0 border-end" style="border-radius: 0; padding: 0; display: flex; align-items: center; justify-content: center;" @onclick="() => ChangePrice(2, -1)">-</button>
+                    <input type="number" min="0" class="form-control text-center border-0" @bind="filter.MaxPrice" placeholder="∞" style="padding: 0; -moz-appearance: textfield;" />
+                    <button class="btn btn-outline-secondary border-0 border-start" style="border-radius: 0; padding: 0; display: flex; align-items: center; justify-content: center;" @onclick="() => ChangePrice(2, 1)">+</button>
+                </div>
+            </div>
+
+            <!-- Кнопка Найти: -->
+            <div class="col-md-2" style="flex: 1;">
+                <label class="form-label small text-muted fw-bold mb-1 invisible">&nbsp;</label>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-primary fw-semibold flex-grow-1" @onclick="ApplyFilters">Найти</button>
+                    <button class="btn btn-outline-secondary" @onclick="ResetFilters" title="Сбросить фильтры">↺</button>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
 @if (isLoading)
 {
-    <p>Загрузка данных из базы...</p>
+    <div class="text-center py-5 text-muted">
+        <div class="spinner-border text-success" role="status"></div>
+        <p class="mt-2">Загрузка данных из базы...</p>
+    </div>
 }
 else if (!products.Any())
 {
-    <div class="alert alert-warning">Товары не найдены.</div>
+    <div class="alert alert-warning d-flex align-items-center" role="alert">
+        <span class="me-2 fs-4">⚠️</span>
+        <div>Товары не найдены по вашему запросу. Попробуйте изменить параметры фильтрации.</div>
+    </div>
 }
 else
 {
-    <table class="table table-striped table-hover align-middle">
-        <thead>
-            <tr>
-                <th>Название</th>
-                <th>Производитель</th>
-                <th>Действ. вещество</th>
-                <th>Цена</th>
-                <th>Рецепт</th>
-                <th>Действие</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var product in products)
-            {
-                <tr>
-                    <td>
-                        <strong>@product.Name</strong>
-                        @if (!string.IsNullOrWhiteSpace(product.Description))
-                        {
-                            <div class="text-muted small">@product.Description</div>
-                        }
-                    </td>
-                    <td>@product.Manufacturer</td>
-                    <td>@product.ActiveIngredient</td>
-                    <td>@product.Price.ToString("C")</td>
-                    <td>
-                        @if (product.IsPrescriptionRequired)
-                        {
-                            <span class="badge bg-danger">По рецепту</span>
-                        }
-                        else
-                        {
-                            <span class="badge bg-success">Без рецепта</span>
-                        }
-                    </td>
-                    <td>
-                        <button type="button" class="btn btn-sm btn-success" @onclick="() => AddToCart(product.Id)">
-                            В корзину
-                        </button>
-                    </td>
-                </tr>
-            }
-        </tbody>
-    </table>
+    <div class="card shadow-sm border-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0" style="white-space: nowrap;">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-4" style="width: 30%;">Название</th>
+                        <th style="width: 10%;">Производитель</th>
+                        <th style="width: 10%;">Действ. вещество</th>
+                        <th style="width: 10%;">Цена</th>
+                        <th style="width: 10%;">Рецепт</th>
+                        <th class="text-end pe-4" style="width: 10%; min-width: 120px;"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var product in products)
+                    {
+                        <tr>
+                            <td class="ps-4">
+                                <div>
+                                    <strong class="text-dark d-block mb-1">@product.Name</strong>
+                                    @if (!string.IsNullOrWhiteSpace(product.Description))
+                                    {
+                                        <small class="text-muted">@product.Description</small>
+                                    }
+                                </div>
+                            </td>
+                            <td><span class="text-secondary">@product.Manufacturer</span></td>
+                            <td><span class="text-secondary">@product.ActiveIngredient</span></td>
+                            <td>
+                                <span class="fw-bold text-dark">@product.Price.ToString("C")</span>
+                            </td>
+                            <td>
+                                @if (product.IsPrescriptionRequired)
+                                {
+                                    <span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 px-2 py-2 rounded-pill">По рецепту</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-2 py-2 rounded-pill">Без рецепта</span>
+                                }
+                            </td>
+                            <td class="text-end pe-4">
+                                <button type="button" class="btn btn-success btn-sm fw-semibold" style="white-space: nowrap;" @onclick="() => AddToCart(product.Id)">
+                                    В корзину
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
 }
 
 @if (!string.IsNullOrEmpty(addedMessage))
 {
-    <div class="alert alert-success">@addedMessage</div>
+    <div class="toast-container position-fixed bottom-0 end-0 p-3">
+        <div class="toast show align-items-center text-white bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="d-flex">
+                <div class="toast-body">
+                    @addedMessage
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close" @onclick="CloseToast"></button>
+            </div>
+        </div>
+    </div>
 }
 
 @code {
@@ -114,6 +166,7 @@ else
     private ProductFilter filter = new();
     private bool isLoading = true;
     private string? addedMessage;
+    private System.Threading.Timer? _toastTimer;
 
     protected override async Task OnInitializedAsync()
     {
@@ -140,10 +193,58 @@ else
         await LoadProducts();
     }
 
+    private void ChangePrice(int type, int amount)
+    {
+        if (type == 1) // Min
+        {
+            if (filter.MinPrice.HasValue)
+            {
+                filter.MinPrice += amount;
+                if (filter.MinPrice < 0) filter.MinPrice = 0;
+            }
+            else if (amount > 0)
+            {
+                filter.MinPrice = amount;
+            }
+        }
+        else if (type == 2) // Max
+        {
+            if (filter.MaxPrice.HasValue)
+            {
+                filter.MaxPrice += amount;
+                if (filter.MaxPrice < 0) filter.MaxPrice = 0;
+            }
+            else if (amount > 0)
+            {
+                filter.MaxPrice = amount;
+            }
+        }
+    }
+
     private void AddToCart(int id)
     {
         CartState.AddToCart(id);
         var product = products.FirstOrDefault(p => p.Id == id);
         addedMessage = $"«{product?.Name}» добавлен в корзину.";
+        StartToastTimer();
+    }
+
+    private void StartToastTimer()
+    {
+        _toastTimer?.Dispose();
+        _toastTimer = new System.Threading.Timer(_ =>
+        {
+            InvokeAsync(() =>
+            {
+                addedMessage = null;
+                StateHasChanged();
+            });
+        }, null, 5000, System.Threading.Timeout.Infinite);
+    }
+
+    private void CloseToast()
+    {
+        addedMessage = null;
+        _toastTimer?.Dispose();
     }
 }
