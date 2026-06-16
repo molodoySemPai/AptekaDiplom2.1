@@ -9,11 +9,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace AptekaDiplom22.Migrations
+namespace AptekaDiplom2.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260614184216_SyncChanges")]
-    partial class SyncChanges
+    [Migration("20260616144902_FixStockRowVersionConfig")]
+    partial class FixStockRowVersionConfig
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -42,7 +42,7 @@ namespace AptekaDiplom22.Migrations
                         .HasColumnType("text");
 
                     b.Property<DateTime>("OrderDate")
-                        .HasColumnType("timestamp with time zone");
+                        .HasColumnType("timestamp without time zone");
 
                     b.Property<int>("PharmacyId")
                         .HasColumnType("integer");
@@ -285,6 +285,7 @@ namespace AptekaDiplom22.Migrations
 
                     b.Property<byte[]>("RowVersion")
                         .IsConcurrencyToken()
+                        .IsRequired()
                         .ValueGeneratedOnAddOrUpdate()
                         .HasColumnType("bytea");
 
@@ -304,7 +305,8 @@ namespace AptekaDiplom22.Migrations
                             PharmacyId = 1,
                             ProductId = 1,
                             Quantity = 100,
-                            ReservedQuantity = 0
+                            ReservedQuantity = 0,
+                            RowVersion = new byte[] { 0 }
                         },
                         new
                         {
@@ -312,7 +314,8 @@ namespace AptekaDiplom22.Migrations
                             PharmacyId = 2,
                             ProductId = 1,
                             Quantity = 50,
-                            ReservedQuantity = 0
+                            ReservedQuantity = 0,
+                            RowVersion = new byte[] { 0 }
                         },
                         new
                         {
@@ -320,7 +323,8 @@ namespace AptekaDiplom22.Migrations
                             PharmacyId = 1,
                             ProductId = 2,
                             Quantity = 200,
-                            ReservedQuantity = 0
+                            ReservedQuantity = 0,
+                            RowVersion = new byte[] { 0 }
                         },
                         new
                         {
@@ -328,7 +332,8 @@ namespace AptekaDiplom22.Migrations
                             PharmacyId = 2,
                             ProductId = 3,
                             Quantity = 30,
-                            ReservedQuantity = 0
+                            ReservedQuantity = 0,
+                            RowVersion = new byte[] { 0 }
                         },
                         new
                         {
@@ -336,7 +341,8 @@ namespace AptekaDiplom22.Migrations
                             PharmacyId = 1,
                             ProductId = 4,
                             Quantity = 80,
-                            ReservedQuantity = 0
+                            ReservedQuantity = 0,
+                            RowVersion = new byte[] { 0 }
                         },
                         new
                         {
@@ -344,7 +350,8 @@ namespace AptekaDiplom22.Migrations
                             PharmacyId = 3,
                             ProductId = 4,
                             Quantity = 60,
-                            ReservedQuantity = 0
+                            ReservedQuantity = 0,
+                            RowVersion = new byte[] { 0 }
                         },
                         new
                         {
@@ -352,7 +359,8 @@ namespace AptekaDiplom22.Migrations
                             PharmacyId = 1,
                             ProductId = 5,
                             Quantity = 25,
-                            ReservedQuantity = 0
+                            ReservedQuantity = 0,
+                            RowVersion = new byte[] { 0 }
                         },
                         new
                         {
@@ -360,7 +368,8 @@ namespace AptekaDiplom22.Migrations
                             PharmacyId = 2,
                             ProductId = 5,
                             Quantity = 10,
-                            ReservedQuantity = 0
+                            ReservedQuantity = 0,
+                            RowVersion = new byte[] { 0 }
                         },
                         new
                         {
@@ -368,7 +377,8 @@ namespace AptekaDiplom22.Migrations
                             PharmacyId = 2,
                             ProductId = 6,
                             Quantity = 70,
-                            ReservedQuantity = 0
+                            ReservedQuantity = 0,
+                            RowVersion = new byte[] { 0 }
                         },
                         new
                         {
@@ -376,7 +386,8 @@ namespace AptekaDiplom22.Migrations
                             PharmacyId = 3,
                             ProductId = 6,
                             Quantity = 40,
-                            ReservedQuantity = 0
+                            ReservedQuantity = 0,
+                            RowVersion = new byte[] { 0 }
                         },
                         new
                         {
@@ -384,7 +395,8 @@ namespace AptekaDiplom22.Migrations
                             PharmacyId = 1,
                             ProductId = 7,
                             Quantity = 15,
-                            ReservedQuantity = 0
+                            ReservedQuantity = 0,
+                            RowVersion = new byte[] { 0 }
                         },
                         new
                         {
@@ -392,7 +404,8 @@ namespace AptekaDiplom22.Migrations
                             PharmacyId = 3,
                             ProductId = 8,
                             Quantity = 55,
-                            ReservedQuantity = 0
+                            ReservedQuantity = 0,
+                            RowVersion = new byte[] { 0 }
                         });
                 });
 

@@ -12,7 +12,7 @@ namespace AptekaDiplom2.Services
     public class AuthResult
     {
         public bool Success { get; set; }
-        public string? Message { get; set; } // Добавили знак ?
-        public User? User { get; set; }       // Добавили знак ?
+        public string? Message { get; set; }
+        public User? User { get; set; }
     }
 }

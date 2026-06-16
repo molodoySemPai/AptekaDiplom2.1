@@ -1,205 +1,134 @@
-﻿using AptekaDiplom2.Data;
+﻿using AptekaDiplom2.Interfaces;
 using AptekaDiplom2.Models;
 using Microsoft.EntityFrameworkCore;
+using System.Collections.Concurrent;
 
 namespace AptekaDiplom2.Services
 {
     public class OrderService : IOrderService
     {
-        private readonly ApplicationDbContext _context;
+        private readonly IUnitOfWork _unitOfWork;
 
-        public OrderService(ApplicationDbContext context)
+        public OrderService(IUnitOfWork unitOfWork)
         {
-            _context = context;
-        }
-
-        public async Task<(bool Success, string Message, int OrderId)> CreateOrderAsync(Order order, Dictionary<int, int> productQuantities)
-        {
-            if (productQuantities == null || productQuantities.Count == 0)
-                return (false, "Корзина пуста.", 0);
-
-            const int maxRetries = 3;
-            int retryCount = 0;
-
-            while (retryCount < maxRetries)
-            {
-                using var transaction = await _context.Database.BeginTransactionAsync();
-                try
-                {
-                    order.OrderItems = new List<OrderItem>();
-
-                    //1. Резервирование и подсчет суммы
-                    decimal total = 0;
-                    foreach (var item in productQuantities)
-                    {
-                        if (item.Value <= 0) continue;
-
-                        var stock = await _context.Stocks
-                            .FirstOrDefaultAsync(s => s.ProductId == item.Key && s.PharmacyId == order.PharmacyId);
-
-                        if (stock == null || (stock.Quantity - stock.ReservedQuantity) < item.Value)
-                        {
-                            await transaction.RollbackAsync();
-                            var product = await _context.Products.FindAsync(item.Key);
-                            var productName = product?.Name ?? $"ID {item.Key}";
-                            return (false, $"Недостаточно товара \"{productName}\" в выбранной аптеке.", 0);
-                        }
-
-                        var prod = await _context.Products.FindAsync(item.Key);
-                        if (prod == null) continue;
-
-                        stock.ReservedQuantity += item.Value;
-                        total += prod.Price * item.Value;
-
-                        order.OrderItems.Add(new OrderItem
-                        {
-                            ProductId = item.Key,
-                            Quantity = item.Value,
-                            UnitPrice = prod.Price
-                        });
-
-                        _context.Stocks.Update(stock);
-                    }
-
-                    if (order.OrderItems.Count == 0)
-                    {
-                        await transaction.RollbackAsync();
-                        return (false, "Корзина пуста.", 0);
-                    }
-
-                    //2. Сохраняем изменения (остатки)
-                    await _context.SaveChangesAsync();
-
-                    //3. Создаем заказ
-                    order.TotalAmount = total;
-                    order.Status = OrderStatus.New;
-                    _context.Orders.Add(order);
-                    await _context.SaveChangesAsync();
-
-                    await transaction.CommitAsync();
-                    return (true, "Заказ успешно оформлен!", order.Id);
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    await transaction.RollbackAsync();
-                    retryCount++;
-                    if (retryCount >= maxRetries)
-                        return (false, "Ошибка конфликта данных. Попробуйте позже.", 0);
-                    await Task.Delay(100 * retryCount);
-                }
-                catch (Exception ex)
-                {
-                    await transaction.RollbackAsync();
-                    return (false, $"Ошибка: {ex.Message}", 0);
-                }
-            }
-            return (false, "Неизвестная ошибка.", 0);
-        }
-
-        public async Task<List<Order>> GetOrdersByUserAsync(int userId)
-        {
-            return await _context.Orders
-                .Include(o => o.Pharmacy)
-                .Include(o => o.OrderItems)
-                    .ThenInclude(oi => oi.Product)
-                .AsNoTracking()
-                .Where(o => o.UserId == userId)
-                .OrderByDescending(o => o.OrderDate)
-                .ToListAsync();
-        }
-
-        public async Task<Order?> GetOrderByIdAsync(int orderId)
-        {
-            return await _context.Orders
-                .Include(o => o.Pharmacy)
-                .Include(o => o.User)
-                .Include(o => o.OrderItems)
-                    .ThenInclude(oi => oi.Product)
-                .AsNoTracking()
-                .FirstOrDefaultAsync(o => o.Id == orderId);
+            _unitOfWork = unitOfWork;
         }
 
         public async Task<List<Order>> GetAllOrdersAsync()
         {
-            return await _context.Orders
-                .Include(o => o.Pharmacy)
-                .Include(o => o.User)
-                .Include(o => o.OrderItems)
-                    .ThenInclude(oi => oi.Product)
-                .AsNoTracking()
-                .OrderByDescending(o => o.OrderDate)
-                .ToListAsync();
+            return (await _unitOfWork.Orders.GetAllAsync()).ToList();
         }
 
-        public async Task<bool> UpdateOrderStatusAsync(int orderId, string newStatus)
+        public async Task<List<Order>> GetOrdersByUserAsync(int userId)
         {
-            if (!OrderStatus.All.Contains(newStatus))
-                return false;
+            var orders = (await _unitOfWork.Orders.FindAsync(o => o.UserId == userId)).ToList();
 
-            using var transaction = await _context.Database.BeginTransactionAsync();
-            try
+            // Подгрузка связанных данных (Pharmacy) через репозиторий, чтобы не было дубликатов отслеживания
+            var pharmacyIds = orders.Select(o => o.PharmacyId).Distinct().ToList();
+            var pharmacies = (await _unitOfWork.Pharmacies.FindAsync(p => pharmacyIds.Contains(p.Id))).ToList();
+
+            foreach (var order in orders)
             {
-                var order = await _context.Orders
-                    .Include(o => o.OrderItems)
-                    .FirstOrDefaultAsync(o => o.Id == orderId);
+                order.Pharmacy = pharmacies.FirstOrDefault(p => p.Id == order.PharmacyId);
+            }
 
-                if (order == null)
-                {
-                    await transaction.RollbackAsync();
-                    return false;
-                }
+            return orders;
+        }
 
-                var previousStatus = order.Status;
-                if (previousStatus == newStatus)
-                {
-                    await transaction.RollbackAsync();
-                    return true;
-                }
+        public async Task<AptekaDiplom2.Models.Order?> GetOrderByIdAsync(int id)
+        {
+            return await _unitOfWork.Orders.GetByIdAsync(id);
+        }
 
-                //Если заказ отменяется (и ранее не был отменён/завершён) — освобождаем резерв
-                if (newStatus == OrderStatus.Cancelled &&
-                    previousStatus != OrderStatus.Cancelled &&
-                    previousStatus != OrderStatus.Completed)
+        public async Task<(bool Success, string? Message, int OrderId)> CreateOrderAsync(Order order, Dictionary<int, int> productsToReserve)
+        {
+            int maxRetries = 3;
+            int retryCount = 0;
+            bool success = false;
+
+            while (retryCount < maxRetries && !success)
+            {
+                try
                 {
-                    foreach (var item in order.OrderItems)
+                    await _unitOfWork.BeginTransactionAsync();
+
+                    // 1. Создаем список OrderItems с ценами
+                    var orderItems = new List<AptekaDiplom2.Models.OrderItem>();
+
+                    // Получаем все товары одним запросом через Context, чтобы отследить их корректно
+                    // ВНИМАНИЕ: Repository не поддерживает Include. Поэтому используем здесь контекст,
+                    // НО все операции должны быть внутри одной транзакции UnitOfWork.
+                    var context = _unitOfWork.GetContext();
+
+                    foreach (var item in productsToReserve)
                     {
-                        var stock = await _context.Stocks
-                            .FirstOrDefaultAsync(s => s.ProductId == item.ProductId && s.PharmacyId == order.PharmacyId);
-                        if (stock != null)
+                        var product = await context.Products.FindAsync(item.Key);
+                        if (product != null)
                         {
-                            stock.ReservedQuantity = Math.Max(0, stock.ReservedQuantity - item.Quantity);
-                            _context.Stocks.Update(stock);
+                            orderItems.Add(new AptekaDiplom2.Models.OrderItem
+                            {
+                                ProductId = item.Key,
+                                Quantity = item.Value,
+                                UnitPrice = product.Price,
+                                OrderId = order.Id
+                            });
                         }
                     }
-                }
 
-                //Если заказ выдан клиенту — списываем фактический остаток и снимаем резерв
-                if (newStatus == OrderStatus.Completed && previousStatus != OrderStatus.Completed)
-                {
-                    foreach (var item in order.OrderItems)
+                    // Присваиваем элементы заказу (EF Core автоматически свяжет их с Order)
+                    order.OrderItems = orderItems;
+
+                    // 2. Резервирование товаров через Репозитории (которые работают с тем же Context)
+                    foreach (var item in productsToReserve)
                     {
-                        var stock = await _context.Stocks
-                            .FirstOrDefaultAsync(s => s.ProductId == item.ProductId && s.PharmacyId == order.PharmacyId);
-                        if (stock != null)
+                        var stocks = (await _unitOfWork.Stocks.FindAsync(s => s.ProductId == item.Key && s.PharmacyId == order.PharmacyId)).ToList();
+                        var stock = stocks.FirstOrDefault();
+
+                        if (stock != null && stock.Quantity >= stock.ReservedQuantity + item.Value)
                         {
-                            stock.Quantity = Math.Max(0, stock.Quantity - item.Quantity);
-                            stock.ReservedQuantity = Math.Max(0, stock.ReservedQuantity - item.Quantity);
-                            _context.Stocks.Update(stock);
+                            stock.ReservedQuantity += item.Value;
+                            await _unitOfWork.Stocks.UpdateAsync(stock);
+                        }
+                        else
+                        {
+                            await _unitOfWork.RollbackTransactionAsync();
+                            return (false, "Товар закончился на складе", 0);
                         }
                     }
-                }
 
-                order.Status = newStatus;
-                _context.Orders.Update(order);
-                await _context.SaveChangesAsync();
-                await transaction.CommitAsync();
-                return true;
+                    // 3. Создаем заказ в БД
+                    await _unitOfWork.Orders.AddAsync(order);
+
+                    await _unitOfWork.CommitTransactionAsync();
+
+                    success = true;
+                    return (true, null, order.Id);
+                }
+                catch (DbUpdateConcurrencyException ex)
+                {
+                    await _unitOfWork.RollbackTransactionAsync();
+                    retryCount++;
+                    await Task.Delay(100);
+                }
+                catch (Exception ex)
+                {
+                    await _unitOfWork.RollbackTransactionAsync();
+                    return (false, ex.Message, 0);
+                }
             }
-            catch
-            {
-                await transaction.RollbackAsync();
-                return false;
-            }
+
+            return (false, "Не удалось оформить заказ", 0);
+        }
+
+        public async Task<bool> UpdateOrderStatusAsync(int orderId, string status)
+        {
+            var order = await _unitOfWork.Orders.GetByIdAsync(orderId);
+            if (order == null) return false;
+
+            order.Status = status;
+            await _unitOfWork.Orders.UpdateAsync(order);
+            await _unitOfWork.SaveChangesAsync();
+            return true;
         }
     }
 }

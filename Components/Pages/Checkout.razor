@@ -263,7 +263,8 @@
             PharmacyId = orderModel.PharmacyId,
             CustomerName = orderModel.CustomerName,
             CustomerPhone = orderModel.CustomerPhone,
-            OrderDate = DateTime.Now
+            OrderDate = DateTime.Now,
+            TotalAmount = totalAmount
         };
 
         var productsToReserve = new Dictionary<int, int>(CartState.Items);

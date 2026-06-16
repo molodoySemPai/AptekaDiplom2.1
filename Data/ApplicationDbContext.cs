@@ -17,7 +17,32 @@ namespace AptekaDiplom2.Data
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            //Индексы для оптимизации
+            // --- Конфигурация Stock (ИСПРАВЛЕНО ДЛЯ РЕШЕНИЯ ОШИБКИ NULL) ---
+            modelBuilder.Entity<Stock>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+
+                // ВАЖНО: Используем IsConcurrencyToken вместо IsRowVersion.
+                // IsRowVersion заставляет EF игнорировать значение при INSERT (считая, что БД его сама создаст),
+                // что приводит к ошибке NULL. IsConcurrencyToken позволяет передавать значение из кода.
+                entity.Property(e => e.RowVersion)
+                      .IsConcurrencyToken()
+                      .IsRequired()
+                      .HasColumnType("bytea");
+
+                // Связи
+                entity.HasOne(e => e.Product)
+                      .WithMany()
+                      .HasForeignKey(e => e.ProductId)
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(e => e.Pharmacy)
+                      .WithMany()
+                      .HasForeignKey(e => e.PharmacyId)
+                      .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            // --- Индексы ---
             modelBuilder.Entity<User>()
                 .HasIndex(u => u.Email)
                 .IsUnique();
@@ -26,7 +51,7 @@ namespace AptekaDiplom2.Data
                 .HasIndex(s => new { s.ProductId, s.PharmacyId })
                 .IsUnique();
 
-            //Начальные данные (Seed Data) для тестирования
+            // --- Начальные данные (Seed Data) ---
             modelBuilder.Entity<Pharmacy>().HasData(
                 new Pharmacy { Id = 1, Name = "Аптека №1 Центральная", Address = "ул. Ленина, 10", Phone = "+79000000001", WorkingHours = "08:00-22:00" },
                 new Pharmacy { Id = 2, Name = "Аптека №2 Солнечная", Address = "пр. Мира, 25", Phone = "+79000000002", WorkingHours = "09:00-21:00" },
@@ -45,18 +70,18 @@ namespace AptekaDiplom2.Data
             );
 
             modelBuilder.Entity<Stock>().HasData(
-                new Stock { Id = 1, ProductId = 1, PharmacyId = 1, Quantity = 100, ReservedQuantity = 0 },
-                new Stock { Id = 2, ProductId = 1, PharmacyId = 2, Quantity = 50, ReservedQuantity = 0 },
-                new Stock { Id = 3, ProductId = 2, PharmacyId = 1, Quantity = 200, ReservedQuantity = 0 },
-                new Stock { Id = 4, ProductId = 3, PharmacyId = 2, Quantity = 30, ReservedQuantity = 0 },
-                new Stock { Id = 5, ProductId = 4, PharmacyId = 1, Quantity = 80, ReservedQuantity = 0 },
-                new Stock { Id = 6, ProductId = 4, PharmacyId = 3, Quantity = 60, ReservedQuantity = 0 },
-                new Stock { Id = 7, ProductId = 5, PharmacyId = 1, Quantity = 25, ReservedQuantity = 0 },
-                new Stock { Id = 8, ProductId = 5, PharmacyId = 2, Quantity = 10, ReservedQuantity = 0 },
-                new Stock { Id = 9, ProductId = 6, PharmacyId = 2, Quantity = 70, ReservedQuantity = 0 },
-                new Stock { Id = 10, ProductId = 6, PharmacyId = 3, Quantity = 40, ReservedQuantity = 0 },
-                new Stock { Id = 11, ProductId = 7, PharmacyId = 1, Quantity = 15, ReservedQuantity = 0 },
-                new Stock { Id = 12, ProductId = 8, PharmacyId = 3, Quantity = 55, ReservedQuantity = 0 }
+                new Stock { Id = 1, ProductId = 1, PharmacyId = 1, Quantity = 100, ReservedQuantity = 0, RowVersion = new byte[] { 0 } },
+                new Stock { Id = 2, ProductId = 1, PharmacyId = 2, Quantity = 50, ReservedQuantity = 0, RowVersion = new byte[] { 0 } },
+                new Stock { Id = 3, ProductId = 2, PharmacyId = 1, Quantity = 200, ReservedQuantity = 0, RowVersion = new byte[] { 0 } },
+                new Stock { Id = 4, ProductId = 3, PharmacyId = 2, Quantity = 30, ReservedQuantity = 0, RowVersion = new byte[] { 0 } },
+                new Stock { Id = 5, ProductId = 4, PharmacyId = 1, Quantity = 80, ReservedQuantity = 0, RowVersion = new byte[] { 0 } },
+                new Stock { Id = 6, ProductId = 4, PharmacyId = 3, Quantity = 60, ReservedQuantity = 0, RowVersion = new byte[] { 0 } },
+                new Stock { Id = 7, ProductId = 5, PharmacyId = 1, Quantity = 25, ReservedQuantity = 0, RowVersion = new byte[] { 0 } },
+                new Stock { Id = 8, ProductId = 5, PharmacyId = 2, Quantity = 10, ReservedQuantity = 0, RowVersion = new byte[] { 0 } },
+                new Stock { Id = 9, ProductId = 6, PharmacyId = 2, Quantity = 70, ReservedQuantity = 0, RowVersion = new byte[] { 0 } },
+                new Stock { Id = 10, ProductId = 6, PharmacyId = 3, Quantity = 40, ReservedQuantity = 0, RowVersion = new byte[] { 0 } },
+                new Stock { Id = 11, ProductId = 7, PharmacyId = 1, Quantity = 15, ReservedQuantity = 0, RowVersion = new byte[] { 0 } },
+                new Stock { Id = 12, ProductId = 8, PharmacyId = 3, Quantity = 55, ReservedQuantity = 0, RowVersion = new byte[] { 0 } }
             );
 
             modelBuilder.Entity<User>().HasData(

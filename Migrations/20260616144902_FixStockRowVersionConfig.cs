@@ -6,10 +6,10 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #pragma warning disable CA1814 // Prefer jagged arrays over multidimensional
 
-namespace AptekaDiplom22.Migrations
+namespace AptekaDiplom2.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialCreate : Migration
+    public partial class FixStockRowVersionConfig : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -75,7 +75,7 @@ namespace AptekaDiplom22.Migrations
                     PharmacyId = table.Column<int>(type: "integer", nullable: false),
                     Quantity = table.Column<int>(type: "integer", nullable: false),
                     ReservedQuantity = table.Column<int>(type: "integer", nullable: false),
-                    RowVersion = table.Column<byte[]>(type: "bytea", rowVersion: true, nullable: true)
+                    RowVersion = table.Column<byte[]>(type: "bytea", rowVersion: true, nullable: false)
                 },
                 constraints: table =>
                 {
@@ -102,7 +102,7 @@ namespace AptekaDiplom22.Migrations
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     UserId = table.Column<int>(type: "integer", nullable: false),
                     PharmacyId = table.Column<int>(type: "integer", nullable: false),
-                    OrderDate = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    OrderDate = table.Column<DateTime>(type: "timestamp without time zone", nullable: false),
                     Status = table.Column<string>(type: "text", nullable: false),
                     TotalAmount = table.Column<decimal>(type: "numeric", nullable: false),
                     CustomerName = table.Column<string>(type: "text", nullable: false),
@@ -158,8 +158,9 @@ namespace AptekaDiplom22.Migrations
                 columns: new[] { "Id", "Address", "Name", "Phone", "WorkingHours" },
                 values: new object[,]
                 {
-                    { 1, "ул. Ленина, 10", "Аптека №1 Центральная", "+79000000001", null },
-                    { 2, "пр. Мира, 25", "Аптека №2 Солнечная", "+79000000002", null }
+                    { 1, "ул. Ленина, 10", "Аптека №1 Центральная", "+79000000001", "08:00-22:00" },
+                    { 2, "пр. Мира, 25", "Аптека №2 Солнечная", "+79000000002", "09:00-21:00" },
+                    { 3, "ул. Садовая, 7", "Аптека №3 Заречная", "+79000000003", "08:00-20:00" }
                 });
 
             migrationBuilder.InsertData(
@@ -167,20 +168,39 @@ namespace AptekaDiplom22.Migrations
                 columns: new[] { "Id", "ActiveIngredient", "Description", "IsPrescriptionRequired", "Manufacturer", "Name", "Price" },
                 values: new object[,]
                 {
-                    { 1, "Ацетилсалициловая кислота", null, false, "Bayer", "Аспирин", 100m },
-                    { 2, "Метамизол натрия", null, false, "Фармстандарт", "Анальгин", 50m },
-                    { 3, "Аскорбиновая кислота", null, false, "Evalar", "Витамин C", 150m }
+                    { 1, "Ацетилсалициловая кислота", "Жаропонижающее и обезболивающее средство", false, "Bayer", "Аспирин", 100m },
+                    { 2, "Метамизол натрия", "Обезболивающее средство", false, "Фармстандарт", "Анальгин", 50m },
+                    { 3, "Аскорбиновая кислота", "Витаминный комплекс для иммунитета", false, "Evalar", "Витамин C", 150m },
+                    { 4, "Парацетамол", "Жаропонижающее средство", false, "Фармстандарт", "Парацетамол", 60m },
+                    { 5, "Амоксициллин", "Антибиотик широкого спектра действия", true, "Sandoz", "Амоксициллин", 220m },
+                    { 6, "Ибупрофен", "Противовоспалительное и обезболивающее средство", false, "Reckitt Benckiser", "Нурофен", 180m },
+                    { 7, "Омепразол", "Средство для лечения язвенной болезни и гастрита", true, "Sandoz", "Омепразол", 130m },
+                    { 8, "Лоратадин", "Противоаллергическое средство", false, "Evalar", "Лоратадин", 90m }
                 });
 
             migrationBuilder.InsertData(
+                table: "Users",
+                columns: new[] { "Id", "Email", "FullName", "PasswordHash", "Phone", "Role" },
+                values: new object[] { 1, "admin@apteka.ru", "Администратор", "$2a$11$0wAaiL2YzKzhuKZTQ4mYye5C6CW2/sFAJh8dCZAVUbm1bz3lkz4cu", "+79990000000", "Admin" });
+
+            // ИСПРАВЛЕНО: Добавлена колонка "RowVersion" и данные для неё
+            migrationBuilder.InsertData(
                 table: "Stocks",
-                columns: new[] { "Id", "PharmacyId", "ProductId", "Quantity", "ReservedQuantity" },
+                columns: new[] { "Id", "PharmacyId", "ProductId", "Quantity", "ReservedQuantity", "RowVersion" },
                 values: new object[,]
                 {
-                    { 1, 1, 1, 100, 0 },
-                    { 2, 2, 1, 50, 0 },
-                    { 3, 1, 2, 200, 0 },
-                    { 4, 2, 3, 30, 0 }
+                    { 1, 1, 1, 100, 0, new byte[] { 0 } },
+                    { 2, 2, 1, 50, 0, new byte[] { 0 } },
+                    { 3, 1, 2, 200, 0, new byte[] { 0 } },
+                    { 4, 2, 3, 30, 0, new byte[] { 0 } },
+                    { 5, 1, 4, 80, 0, new byte[] { 0 } },
+                    { 6, 3, 4, 60, 0, new byte[] { 0 } },
+                    { 7, 1, 5, 25, 0, new byte[] { 0 } },
+                    { 8, 2, 5, 10, 0, new byte[] { 0 } },
+                    { 9, 2, 6, 70, 0, new byte[] { 0 } },
+                    { 10, 3, 6, 40, 0, new byte[] { 0 } },
+                    { 11, 1, 7, 15, 0, new byte[] { 0 } },
+                    { 12, 3, 8, 55, 0, new byte[] { 0 } }
                 });
 
             migrationBuilder.CreateIndex(

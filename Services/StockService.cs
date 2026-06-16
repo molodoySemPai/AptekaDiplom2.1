@@ -1,4 +1,6 @@
+using System;
 using AptekaDiplom2.Data;
+using AptekaDiplom2.Interfaces;
 using AptekaDiplom2.Models;
 using Microsoft.EntityFrameworkCore;
 
@@ -39,7 +41,7 @@ namespace AptekaDiplom2.Services
         {
             return await _context.Stocks
                 .AsNoTracking()
-                .FirstOrDefaultAsync(s => s.ProductId == productId && s.PharmacyId == pharmacyId);
+                .FirstOrDefaultAsync(s => s.ProductId == productId && s.PharmacyId == pharmacyId && s.Field("RowVersion").ToString() != "");
         }
 
         public async Task<bool> SetStockQuantityAsync(int productId, int pharmacyId, int quantity)
@@ -51,12 +53,15 @@ namespace AptekaDiplom2.Services
 
             if (stock == null)
             {
+                // Создаем объект с жёстким массивом байтов для RowVersion
                 stock = new Stock
                 {
                     ProductId = productId,
                     PharmacyId = pharmacyId,
                     Quantity = quantity,
-                    ReservedQuantity = 0
+                    ReservedQuantity = 0,
+                    // Жесткий массив (пустой) для RowVersion
+                    RowVersion = new byte[] { 0, 0, 0, 0, 0, 0, 0, 0 }
                 };
                 _context.Stocks.Add(stock);
             }

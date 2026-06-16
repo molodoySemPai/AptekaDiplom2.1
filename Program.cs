@@ -1,5 +1,7 @@
 using AptekaDiplom2.Components;
 using AptekaDiplom2.Data;
+using AptekaDiplom2.Interfaces;
+using AptekaDiplom2.Repositories;
 using AptekaDiplom2.Services;
 using AptekaDiplom2.State;
 using Microsoft.AspNetCore.Authentication;
@@ -13,10 +15,8 @@ AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
-builder.Services.AddScoped<CartState>();
-
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+builder.Services.AddMemoryCache();
+builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
 builder.Services.AddScoped<IProductService, ProductService>();
 builder.Services.AddScoped<IOrderService, OrderService>();
@@ -24,9 +24,10 @@ builder.Services.AddScoped<IPharmacyService, PharmacyService>();
 builder.Services.AddScoped<IStockService, StockService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 
+builder.Services.AddScoped<CartState>();
 
-builder.Services.AddMemoryCache();
-
+builder.Services.AddDbContext<ApplicationDbContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
@@ -43,7 +44,6 @@ builder.Services.AddCascadingAuthenticationState();
 
 var app = builder.Build();
 
-
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error");
@@ -52,15 +52,13 @@ if (!app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
-
 app.UseRouting();
-
 app.UseAntiforgery();
-
 app.UseAuthentication();
 app.UseAuthorization();
 
-//Эндпоинты для входа/регистрации/выхода
+// --- API Endpoints ---
+
 app.MapPost("/api/auth/login", async (HttpContext httpContext, IAuthService authService) =>
 {
     var form = await httpContext.Request.ReadFormAsync();
@@ -133,9 +131,12 @@ app.MapPost("/api/auth/logout", async (HttpContext httpContext) =>
     return Results.Redirect("/");
 });
 
+// --- App ---
+
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
+// --- Seed Data ---
 
 using (var scope = app.Services.CreateScope())
 {
@@ -143,10 +144,10 @@ using (var scope = app.Services.CreateScope())
     try
     {
         var context = services.GetRequiredService<AptekaDiplom2.Data.ApplicationDbContext>();
-        
+
         var adminEmail = "admin@admin.ru";
-        
-        //Вызов Any через стандартный LINQ
+
+        // Проверка существования админа
         var adminExists = System.Linq.Queryable.Any(context.Users, u => u.Email == adminEmail);
 
         if (!adminExists)
@@ -154,7 +155,7 @@ using (var scope = app.Services.CreateScope())
             var adminUser = new AptekaDiplom2.Models.User
             {
                 Email = adminEmail,
-                PasswordHash = "admin", 
+                PasswordHash = "admin",
                 FullName = "Главный Администратор",
                 Phone = "+79990000000",
                 Role = "Admin"
