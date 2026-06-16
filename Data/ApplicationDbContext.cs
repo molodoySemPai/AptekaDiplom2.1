@@ -17,7 +17,7 @@ namespace AptekaDiplom2.Data
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            // Индексы для оптимизации
+            //Индексы для оптимизации
             modelBuilder.Entity<User>()
                 .HasIndex(u => u.Email)
                 .IsUnique();
@@ -26,7 +26,7 @@ namespace AptekaDiplom2.Data
                 .HasIndex(s => new { s.ProductId, s.PharmacyId })
                 .IsUnique();
 
-            // Начальные данные (Seed Data) для тестирования
+            //Начальные данные (Seed Data) для тестирования
             modelBuilder.Entity<Pharmacy>().HasData(
                 new Pharmacy { Id = 1, Name = "Аптека №1 Центральная", Address = "ул. Ленина, 10", Phone = "+79000000001", WorkingHours = "08:00-22:00" },
                 new Pharmacy { Id = 2, Name = "Аптека №2 Солнечная", Address = "пр. Мира, 25", Phone = "+79000000002", WorkingHours = "09:00-21:00" },
@@ -59,7 +59,6 @@ namespace AptekaDiplom2.Data
                 new Stock { Id = 12, ProductId = 8, PharmacyId = 3, Quantity = 55, ReservedQuantity = 0 }
             );
 
-            // Учётная запись администратора по умолчанию: admin@apteka.ru / Admin123!
             modelBuilder.Entity<User>().HasData(
                 new User
                 {

@@ -17,7 +17,7 @@ body {
     margin: 0;
     padding: 0;
     width: 100%;
-    overflow-x: hidden; /* Блокируем горизонтальный скролл */
+    overflow-x: hidden; /* Блокировка горизонтального скролла */
 }
 
 /* --- TOP NAVBAR --- */
@@ -52,7 +52,7 @@ body {
     gap: 15px;
     position: absolute;
     left: 50%;
-    transform: translateX(-50%); /* Идеальное центрирование */
+    transform: translateX(-50%);
 }
 
 .nav-link {
@@ -75,7 +75,7 @@ body {
         background-color: #f0fff4;
     }
 
-/* Кнопка справа */
+/* Кнопка входа */
 .nav-right {
     margin-left: auto;
 }
@@ -103,16 +103,14 @@ body {
 
 main {
     width: 100%;
-    /* Увеличиваем максимальную ширину с 1200px до 1400px, чтобы таблица была шире */
     max-width: 1400px;
     margin: 0 auto;
     padding-top: 80px;
     padding-bottom: 40px;
-    /* Уменьшаем боковые отступы, чтобы контент "приблизился" к краям */
     padding-left: 10px;
     padding-right: 10px;
     box-sizing: border-box;
-    overflow-x: hidden; /* Все еще обрезаем лишнее, если вдруг что-то вылезет */
+    overflow-x: hidden;
 }
 /* Скрытие стрелочек input number во всех браузерах */
 input[type=number]::-webkit-inner-spin-button,

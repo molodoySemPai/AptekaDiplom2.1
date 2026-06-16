@@ -19,7 +19,7 @@ namespace AptekaDiplom2.Services
         Task<List<string>> GetManufacturersAsync();
         Task<List<string>> GetActiveIngredientsAsync();
 
-        // Административные методы
+        //Административные методы
         Task<Product?> GetProductByIdAsync(int id);
         Task<Product> CreateProductAsync(Product product);
         Task<bool> UpdateProductAsync(Product product);

@@ -6,10 +6,10 @@ namespace AptekaDiplom2.State
 {
     public class CartState
     {
-        // Словарь: ID товара -> Количество
+        //Словарь: ID товара -> Количество
         public Dictionary<int, int> Items { get; set; } = new Dictionary<int, int>();
 
-        // Событие: оповещает меню и страницы, что что-то изменилось
+        //Оповещает меню и страницы, что что-то изменилось
         public event Action? OnChange;
 
         public void AddToCart(int productId)

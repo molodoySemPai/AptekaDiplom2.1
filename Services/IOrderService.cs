@@ -30,7 +30,7 @@ namespace AptekaDiplom2.Services
         Task<List<Order>> GetOrdersByUserAsync(int userId);
         Task<Order?> GetOrderByIdAsync(int orderId);
 
-        // Административные методы
+        //Административные методы
         Task<List<Order>> GetAllOrdersAsync();
         Task<bool> UpdateOrderStatusAsync(int orderId, string newStatus);
     }

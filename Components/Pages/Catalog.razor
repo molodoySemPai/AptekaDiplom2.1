@@ -43,7 +43,7 @@
                 </select>
             </div>
 
-            <!-- Цена ОТ: 12.5% -->
+            <!-- Цена -->
             <div class="col-md-1" style="flex: 0 0 auto; width: 12.5%;">
                 <label class="form-label small text-muted fw-bold mb-1">Цена от</label>
                 <div style="display: grid; grid-template-columns: 32px 1fr 32px; height: 31px; border: 1px solid #ced4da; border-radius: 4px; overflow: hidden;">
@@ -63,7 +63,7 @@
                 </div>
             </div>
 
-            <!-- Кнопка Найти: -->
+            <!-- Кнопка Найти -->
             <div class="col-md-2" style="flex: 1;">
                 <label class="form-label small text-muted fw-bold mb-1 invisible">&nbsp;</label>
                 <div class="d-flex gap-2">
@@ -85,7 +85,6 @@
 else if (!products.Any())
 {
     <div class="alert alert-warning d-flex align-items-center" role="alert">
-        <span class="me-2 fs-4">⚠️</span>
         <div>Товары не найдены по вашему запросу. Попробуйте изменить параметры фильтрации.</div>
     </div>
 }
@@ -195,7 +194,7 @@ else
 
     private void ChangePrice(int type, int amount)
     {
-        if (type == 1) // Min
+        if (type == 1) //Min
         {
             if (filter.MinPrice.HasValue)
             {
@@ -207,7 +206,7 @@ else
                 filter.MinPrice = amount;
             }
         }
-        else if (type == 2) // Max
+        else if (type == 2) //Max
         {
             if (filter.MaxPrice.HasValue)
             {

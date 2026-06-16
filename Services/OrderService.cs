@@ -28,7 +28,7 @@ namespace AptekaDiplom2.Services
                 {
                     order.OrderItems = new List<OrderItem>();
 
-                    // 1. Резервирование и подсчет суммы
+                    //1. Резервирование и подсчет суммы
                     decimal total = 0;
                     foreach (var item in productQuantities)
                     {
@@ -67,10 +67,10 @@ namespace AptekaDiplom2.Services
                         return (false, "Корзина пуста.", 0);
                     }
 
-                    // 2. Сохраняем изменения (остатки)
+                    //2. Сохраняем изменения (остатки)
                     await _context.SaveChangesAsync();
 
-                    // 3. Создаем заказ
+                    //3. Создаем заказ
                     order.TotalAmount = total;
                     order.Status = OrderStatus.New;
                     _context.Orders.Add(order);
@@ -156,7 +156,7 @@ namespace AptekaDiplom2.Services
                     return true;
                 }
 
-                // Если заказ отменяется (и ранее не был отменён/завершён) — освобождаем резерв
+                //Если заказ отменяется (и ранее не был отменён/завершён) — освобождаем резерв
                 if (newStatus == OrderStatus.Cancelled &&
                     previousStatus != OrderStatus.Cancelled &&
                     previousStatus != OrderStatus.Completed)
@@ -173,7 +173,7 @@ namespace AptekaDiplom2.Services
                     }
                 }
 
-                // Если заказ выдан клиенту — списываем фактический остаток и снимаем резерв
+                //Если заказ выдан клиенту — списываем фактический остаток и снимаем резерв
                 if (newStatus == OrderStatus.Completed && previousStatus != OrderStatus.Completed)
                 {
                     foreach (var item in order.OrderItems)

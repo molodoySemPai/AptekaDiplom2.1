@@ -18,7 +18,6 @@ namespace AptekaDiplom2.Services
         {
             var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
             
-            // ЕСЛИ ВАШЕ ПОЛЕ НАЗЫВАЕТСЯ ИНАЧЕ, ЗАМЕНИТЕ "PasswordHash" НА ВАШ ВАРИАНТ
             if (user == null || user.PasswordHash != password) 
             {
                 return new AuthResult { Success = false, Message = "Неверный email или пароль." };
@@ -38,7 +37,7 @@ namespace AptekaDiplom2.Services
             var newUser = new User
             {
                 Email = email,
-                PasswordHash = password, // ТУТ ТОЖЕ МЕНЯЕМ НА PasswordHash
+                PasswordHash = password,
                 FullName = fullName,
                 Phone = phone,
                 Role = "User"
