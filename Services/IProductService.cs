@@ -14,13 +14,13 @@ namespace AptekaDiplom2.Services
     public interface IProductService
     {
         Task<List<Product>> GetAllProductsAsync();
-        Task<Product?> GetByIdAsync(int id); // Если нужно
+        Task<Product?> GetByIdAsync(int id);
         Task<List<string>> GetManufacturersAsync();
         Task<List<string>> GetActiveIngredientsAsync();
-        Task<List<Product>> FilterProductsAsync(ProductFilter filter); // Ваш старый метод, надо вернуть
+        Task<List<Product>> FilterProductsAsync(ProductFilter filter);
         Task CreateProductAsync(Product product);
         Task UpdateProductAsync(Product product);
-        Task<bool> DeleteProductAsync(int id); // Изменили на Task<bool>
+        Task<bool> DeleteProductAsync(int id);
         void InvalidateCache();
     }
 }

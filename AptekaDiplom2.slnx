@@ -1,3 +1,4 @@
 <Solution>
+  <Project Path="../AptekaDiplom2.Tests/AptekaDiplom2.Tests.csproj" Id="d86848e9-ba0d-4d7a-8a3e-650979b6196d" />
   <Project Path="AptekaDiplom2.csproj" />
 </Solution>

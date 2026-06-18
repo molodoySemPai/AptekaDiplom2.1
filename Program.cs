@@ -57,8 +57,6 @@ app.UseAntiforgery();
 app.UseAuthentication();
 app.UseAuthorization();
 
-// --- API Endpoints ---
-
 app.MapPost("/api/auth/login", async (HttpContext httpContext, IAuthService authService) =>
 {
     var form = await httpContext.Request.ReadFormAsync();
@@ -131,12 +129,8 @@ app.MapPost("/api/auth/logout", async (HttpContext httpContext) =>
     return Results.Redirect("/");
 });
 
-// --- App ---
-
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
-
-// --- Seed Data ---
 
 using (var scope = app.Services.CreateScope())
 {
@@ -147,7 +141,7 @@ using (var scope = app.Services.CreateScope())
 
         var adminEmail = "admin@admin.ru";
 
-        // Проверка существования админа
+        //Проверка существования админа
         var adminExists = System.Linq.Queryable.Any(context.Users, u => u.Email == adminEmail);
 
         if (!adminExists)

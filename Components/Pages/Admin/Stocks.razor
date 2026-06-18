@@ -7,6 +7,22 @@
 
 <PageTitle>Управление остатками</PageTitle>
 
+<style>
+    .text-truncate-cell {
+        max-width: 250px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        cursor: help;
+    }
+
+    .action-buttons {
+        white-space: nowrap;
+        min-width: 150px;
+        text-align: right;
+    }
+</style>
+
 <div class="container mt-4">
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h2>Остатки на складах</h2>
@@ -73,19 +89,19 @@
                     <th>В наличии</th>
                     <th>Зарезервировано</th>
                     <th>Доступно</th>
-                    <th></th>
+                    <th class="action-buttons">Действия</th>
                 </tr>
             </thead>
             <tbody>
                 @foreach (var s in stocks)
                 {
                     <tr>
-                        <td>@s.Pharmacy?.Name</td>
-                        <td>@s.Product?.Name</td>
+                        <td><div class="text-truncate-cell" title="@s.Pharmacy?.Name">@s.Pharmacy?.Name</div></td>
+                        <td><div class="text-truncate-cell" title="@s.Product?.Name">@s.Product?.Name</div></td>
                         <td>@s.Quantity</td>
                         <td>@s.ReservedQuantity</td>
                         <td>@(s.Quantity - s.ReservedQuantity)</td>
-                        <td>
+                        <td class="action-buttons">
                             <button class="btn btn-sm btn-outline-primary" @onclick="() => EditStock(s)">Изм.</button>
                             <button class="btn btn-sm btn-outline-danger" @onclick="() => DeleteStock(s.Id)">Удал.</button>
                         </td>

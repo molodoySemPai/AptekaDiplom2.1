@@ -17,19 +17,19 @@ namespace AptekaDiplom2.Data
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            // --- Конфигурация Stock (ИСПРАВЛЕНО) ---
+            //Конфигурация Stock
             modelBuilder.Entity<Stock>(entity =>
             {
                 entity.HasKey(e => e.Id);
 
-                // ValueGeneratedNever() запрещает EF Core игнорировать значение при INSERT
+                //ValueGeneratedNever() запрещает EF Core игнорировать значение при INSERT
                 entity.Property(e => e.RowVersion)
                       .IsConcurrencyToken()
                       .IsRequired()
                       .ValueGeneratedNever()
                       .HasColumnType("bytea");
 
-                // Связи
+                //Связи
                 entity.HasOne(e => e.Product)
                       .WithMany()
                       .HasForeignKey(e => e.ProductId)
@@ -41,7 +41,7 @@ namespace AptekaDiplom2.Data
                       .OnDelete(DeleteBehavior.Cascade);
             });
 
-            // --- Индексы ---
+            //Индексы
             modelBuilder.Entity<User>()
                 .HasIndex(u => u.Email)
                 .IsUnique();
@@ -50,11 +50,11 @@ namespace AptekaDiplom2.Data
                 .HasIndex(s => new { s.ProductId, s.PharmacyId })
                 .IsUnique();
 
-            // --- Начальные данные (Seed Data) ---
+            //Начальные данные
             modelBuilder.Entity<Pharmacy>().HasData(
-                new Pharmacy { Id = 1, Name = "Аптека №1 Центральная", Address = "ул. Ленина, 10", Phone = "+79000000001", WorkingHours = "08:00-22:00" },
-                new Pharmacy { Id = 2, Name = "Аптека №2 Солнечная", Address = "пр. Мира, 25", Phone = "+79000000002", WorkingHours = "09:00-21:00" },
-                new Pharmacy { Id = 3, Name = "Аптека №3 Заречная", Address = "ул. Садовая, 7", Phone = "+79000000003", WorkingHours = "08:00-20:00" }
+                new Pharmacy { Id = 1, Name = "КООП-ФАРМ(Октября)", Address = "ул. 50 лет Октября, 86", Phone = "+79000000001", WorkingHours = "08:00-21:00" },
+                new Pharmacy { Id = 2, Name = "КООП-ФАРМ(Некрасово)", Address = "ул. Некрасово, 26", Phone = "+79000000002", WorkingHours = "08:00-20:00" },
+                new Pharmacy { Id = 3, Name = "КООП-ФАРМ(Красоармейская)", Address = "ул. Красноармейская, 5А", Phone = "+79000000003", WorkingHours = "08:00-18:00" }
             );
 
             modelBuilder.Entity<Product>().HasData(

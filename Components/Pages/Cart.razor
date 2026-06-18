@@ -7,6 +7,16 @@
 
 <PageTitle>Корзина</PageTitle>
 
+<style>
+    .text-truncate-cell {
+        max-width: 350px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        cursor: help;
+    }
+</style>
+
 <div class="container mt-4">
     <h2 class="mb-4">Корзина</h2>
 
@@ -27,7 +37,7 @@
                 <div class="card shadow-sm border-0">
                     <div class="card-body p-0">
                         <div class="table-responsive">
-                            <table class="table align-middle mb-0" style="white-space: nowrap;">
+                            <table class="table align-middle mb-0">
                                 <thead class="table-light">
                                     <tr>
                                         <th style="width: 40%;">Товар</th>
@@ -42,13 +52,13 @@
                                     {
                                         <tr>
                                             <td>
-                                                <div>
+                                                <div class="text-truncate-cell" title="@product.Name">
                                                     <strong>@product.Name</strong>
-                                                    @if (!string.IsNullOrWhiteSpace(product.Description))
-                                                    {
-                                                        <div class="text-muted small">@product.Description</div>
-                                                    }
                                                 </div>
+                                                @if (!string.IsNullOrWhiteSpace(product.Description))
+                                                {
+                                                    <div class="text-muted small text-truncate-cell" title="@product.Description">@product.Description</div>
+                                                }
                                             </td>
                                             <td>@product.Price.ToString("C")</td>
                                             <td>

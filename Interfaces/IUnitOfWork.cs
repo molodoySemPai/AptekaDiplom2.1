@@ -12,7 +12,7 @@ namespace AptekaDiplom2.Interfaces
         IRepository<Pharmacy> Pharmacies { get; }
         IRepository<User> Users { get; }
 
-        // Метод для получения контекста (для сложных запросов, если Repository не хватает)
+        //Метод для получения контекста
         ApplicationDbContext GetContext();
 
         Task<int> SaveChangesAsync();

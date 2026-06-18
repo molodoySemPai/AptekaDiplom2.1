@@ -49,7 +49,6 @@ namespace AptekaDiplom2.Services
         public async Task<List<Product>> FilterProductsAsync(ProductFilter filter)
         {
             var allProducts = await GetAllProductsAsync();
-            // Исправлено: явное приведение IEnumerable к List через ToList()
             var query = allProducts.AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(filter.SearchTerm))
@@ -83,9 +82,8 @@ namespace AptekaDiplom2.Services
 
         public async Task UpdateProductAsync(Product product)
         {
-            // ИСПРАВЛЕНИЕ: Detach предотвращает конфликт отслеживания
             var context = _unitOfWork.GetContext();
-            context.ChangeTracker.Clear(); // Сбрасываем следы всех сущностей
+            context.ChangeTracker.Clear();
             context.Update(product);
 
             await _unitOfWork.SaveChangesAsync();

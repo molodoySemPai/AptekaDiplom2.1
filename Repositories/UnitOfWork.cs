@@ -3,7 +3,7 @@ using AptekaDiplom2.Interfaces;
 using AptekaDiplom2.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
-using System.Data; // <--- Добавлено для IsolationLevel
+using System.Data;
 
 namespace AptekaDiplom2.Repositories
 {
@@ -32,7 +32,6 @@ namespace AptekaDiplom2.Repositories
 
         public async Task BeginTransactionAsync()
         {
-            // Теперь IsolationLevel доступен
             _transaction = await _context.Database.BeginTransactionAsync(IsolationLevel.RepeatableRead);
         }
 

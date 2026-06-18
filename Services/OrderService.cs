@@ -1,7 +1,7 @@
 ﻿using AptekaDiplom2.Interfaces;
 using AptekaDiplom2.Models;
 using Microsoft.EntityFrameworkCore;
-using System.Collections.Concurrent;
+using System.Text.RegularExpressions;
 
 namespace AptekaDiplom2.Services
 {
@@ -22,8 +22,7 @@ namespace AptekaDiplom2.Services
         public async Task<List<Order>> GetOrdersByUserAsync(int userId)
         {
             var orders = (await _unitOfWork.Orders.FindAsync(o => o.UserId == userId)).ToList();
-
-            // Подгрузка связанных данных (Pharmacy) через репозиторий, чтобы не было дубликатов отслеживания
+            //Подгрузка связанных данных (Pharmacy) через репозиторий, чтобы не было дубликатов отслеживания
             var pharmacyIds = orders.Select(o => o.PharmacyId).Distinct().ToList();
             var pharmacies = (await _unitOfWork.Pharmacies.FindAsync(p => pharmacyIds.Contains(p.Id))).ToList();
 
@@ -42,6 +41,12 @@ namespace AptekaDiplom2.Services
 
         public async Task<(bool Success, string? Message, int OrderId)> CreateOrderAsync(Order order, Dictionary<int, int> productsToReserve)
         {
+            //Валидация телефона
+            if (!IsValidPhone(order.CustomerPhone, out string phoneError))
+            {
+                throw new ArgumentException(phoneError);
+            }
+
             int maxRetries = 3;
             int retryCount = 0;
             bool success = false;
@@ -52,12 +57,8 @@ namespace AptekaDiplom2.Services
                 {
                     await _unitOfWork.BeginTransactionAsync();
 
-                    // 1. Создаем список OrderItems с ценами
+                    //1. Создаем список OrderItems с ценами
                     var orderItems = new List<AptekaDiplom2.Models.OrderItem>();
-
-                    // Получаем все товары одним запросом через Context, чтобы отследить их корректно
-                    // ВНИМАНИЕ: Repository не поддерживает Include. Поэтому используем здесь контекст,
-                    // НО все операции должны быть внутри одной транзакции UnitOfWork.
                     var context = _unitOfWork.GetContext();
 
                     foreach (var item in productsToReserve)
@@ -74,11 +75,9 @@ namespace AptekaDiplom2.Services
                             });
                         }
                     }
-
-                    // Присваиваем элементы заказу (EF Core автоматически свяжет их с Order)
                     order.OrderItems = orderItems;
 
-                    // 2. Резервирование товаров через Репозитории (которые работают с тем же Context)
+                    //2. Резервирование товаров через Репозитории
                     foreach (var item in productsToReserve)
                     {
                         var stocks = (await _unitOfWork.Stocks.FindAsync(s => s.ProductId == item.Key && s.PharmacyId == order.PharmacyId)).ToList();
@@ -96,7 +95,7 @@ namespace AptekaDiplom2.Services
                         }
                     }
 
-                    // 3. Создаем заказ в БД
+                    //3. Создаем заказ в БД
                     await _unitOfWork.Orders.AddAsync(order);
 
                     await _unitOfWork.CommitTransactionAsync();
@@ -128,6 +127,34 @@ namespace AptekaDiplom2.Services
             order.Status = status;
             await _unitOfWork.Orders.UpdateAsync(order);
             await _unitOfWork.SaveChangesAsync();
+            return true;
+        }
+
+        //Валидация телефона
+        private bool IsValidPhone(string phone, out string errorMessage)
+        {
+            errorMessage = string.Empty;
+
+            if (string.IsNullOrWhiteSpace(phone))
+            {
+                errorMessage = $"Неправильный номер телефона: {phone}";
+                return false;
+            }
+
+            string cleanPhone = Regex.Replace(phone, @"[^\d]", "");
+
+            if (cleanPhone.Length < 10 || cleanPhone.Length > 15)
+            {
+                errorMessage = $"Неправильный номер телефона: {phone}";
+                return false;
+            }
+
+            if (!cleanPhone.StartsWith("7") && !cleanPhone.StartsWith("8") && !cleanPhone.StartsWith("375"))
+            {
+                errorMessage = $"Неправильный номер телефона: {phone}";
+                return false;
+            }
+
             return true;
         }
     }

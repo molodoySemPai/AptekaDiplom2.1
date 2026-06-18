@@ -53,14 +53,12 @@ namespace AptekaDiplom2.Services
 
             if (stock == null)
             {
-                // Создаем объект с жёстким массивом байтов для RowVersion
                 stock = new Stock
                 {
                     ProductId = productId,
                     PharmacyId = pharmacyId,
                     Quantity = quantity,
                     ReservedQuantity = 0,
-                    // Жесткий массив (пустой) для RowVersion
                     RowVersion = new byte[] { 0, 0, 0, 0, 0, 0, 0, 0 }
                 };
                 _context.Stocks.Add(stock);
@@ -68,7 +66,6 @@ namespace AptekaDiplom2.Services
             else
             {
                 stock.Quantity = quantity;
-                // Обязательно обновляем токен при изменении записи для работы оптимистичной блокировки
                 stock.RowVersion = Guid.NewGuid().ToByteArray();
             }
 

@@ -28,9 +28,7 @@ namespace AptekaDiplom2.Services
         Task<(bool Success, string Message, int OrderId)> CreateOrderAsync(Order order, Dictionary<int, int> productQuantities);
 
         Task<List<Order>> GetOrdersByUserAsync(int userId);
-        Task<Order?> GetOrderByIdAsync(int id); // Добавили этот метод
-
-        //Административные методы
+        Task<Order?> GetOrderByIdAsync(int id);
         Task<List<Order>> GetAllOrdersAsync();
         Task<bool> UpdateOrderStatusAsync(int orderId, string newStatus);
     }
