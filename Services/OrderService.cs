@@ -22,7 +22,6 @@ namespace AptekaDiplom2.Services
         public async Task<List<Order>> GetOrdersByUserAsync(int userId)
         {
             var orders = (await _unitOfWork.Orders.FindAsync(o => o.UserId == userId)).ToList();
-            //Подгрузка связанных данных (Pharmacy) через репозиторий, чтобы не было дубликатов отслеживания
             var pharmacyIds = orders.Select(o => o.PharmacyId).Distinct().ToList();
             var pharmacies = (await _unitOfWork.Pharmacies.FindAsync(p => pharmacyIds.Contains(p.Id))).ToList();
 
@@ -41,7 +40,6 @@ namespace AptekaDiplom2.Services
 
         public async Task<(bool Success, string? Message, int OrderId)> CreateOrderAsync(Order order, Dictionary<int, int> productsToReserve)
         {
-            //Валидация телефона
             if (!IsValidPhone(order.CustomerPhone, out string phoneError))
             {
                 throw new ArgumentException(phoneError);
@@ -57,7 +55,6 @@ namespace AptekaDiplom2.Services
                 {
                     await _unitOfWork.BeginTransactionAsync();
 
-                    //1. Создаем список OrderItems с ценами
                     var orderItems = new List<AptekaDiplom2.Models.OrderItem>();
                     var context = _unitOfWork.GetContext();
 
@@ -77,7 +74,6 @@ namespace AptekaDiplom2.Services
                     }
                     order.OrderItems = orderItems;
 
-                    //2. Резервирование товаров через Репозитории
                     foreach (var item in productsToReserve)
                     {
                         var stocks = (await _unitOfWork.Stocks.FindAsync(s => s.ProductId == item.Key && s.PharmacyId == order.PharmacyId)).ToList();
@@ -95,7 +91,6 @@ namespace AptekaDiplom2.Services
                         }
                     }
 
-                    //3. Создаем заказ в БД
                     await _unitOfWork.Orders.AddAsync(order);
 
                     await _unitOfWork.CommitTransactionAsync();
@@ -129,8 +124,6 @@ namespace AptekaDiplom2.Services
             await _unitOfWork.SaveChangesAsync();
             return true;
         }
-
-        //Валидация телефона
         private bool IsValidPhone(string phone, out string errorMessage)
         {
             errorMessage = string.Empty;
