@@ -17,17 +17,16 @@ namespace AptekaDiplom2.Data
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            // --- Конфигурация Stock (ИСПРАВЛЕНО ДЛЯ РЕШЕНИЯ ОШИБКИ NULL) ---
+            // --- Конфигурация Stock (ИСПРАВЛЕНО) ---
             modelBuilder.Entity<Stock>(entity =>
             {
                 entity.HasKey(e => e.Id);
 
-                // ВАЖНО: Используем IsConcurrencyToken вместо IsRowVersion.
-                // IsRowVersion заставляет EF игнорировать значение при INSERT (считая, что БД его сама создаст),
-                // что приводит к ошибке NULL. IsConcurrencyToken позволяет передавать значение из кода.
+                // ValueGeneratedNever() запрещает EF Core игнорировать значение при INSERT
                 entity.Property(e => e.RowVersion)
                       .IsConcurrencyToken()
                       .IsRequired()
+                      .ValueGeneratedNever()
                       .HasColumnType("bytea");
 
                 // Связи

@@ -41,7 +41,7 @@ namespace AptekaDiplom2.Services
         {
             return await _context.Stocks
                 .AsNoTracking()
-                .FirstOrDefaultAsync(s => s.ProductId == productId && s.PharmacyId == pharmacyId && s.Field("RowVersion").ToString() != "");
+                .FirstOrDefaultAsync(s => s.ProductId == productId && s.PharmacyId == pharmacyId && s.RowVersion != null && s.RowVersion.Length > 0);
         }
 
         public async Task<bool> SetStockQuantityAsync(int productId, int pharmacyId, int quantity)
@@ -68,6 +68,8 @@ namespace AptekaDiplom2.Services
             else
             {
                 stock.Quantity = quantity;
+                // Обязательно обновляем токен при изменении записи для работы оптимистичной блокировки
+                stock.RowVersion = Guid.NewGuid().ToByteArray();
             }
 
             await _context.SaveChangesAsync();

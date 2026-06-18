@@ -283,7 +283,6 @@ namespace AptekaDiplom2.Migrations
                     b.Property<byte[]>("RowVersion")
                         .IsConcurrencyToken()
                         .IsRequired()
-                        .ValueGeneratedOnAddOrUpdate()
                         .HasColumnType("bytea");
 
                     b.HasKey("Id");

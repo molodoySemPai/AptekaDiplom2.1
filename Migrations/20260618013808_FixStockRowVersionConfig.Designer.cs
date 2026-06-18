@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace AptekaDiplom2.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260616144902_FixStockRowVersionConfig")]
+    [Migration("20260618013808_FixStockRowVersionConfig")]
     partial class FixStockRowVersionConfig
     {
         /// <inheritdoc />
@@ -286,7 +286,6 @@ namespace AptekaDiplom2.Migrations
                     b.Property<byte[]>("RowVersion")
                         .IsConcurrencyToken()
                         .IsRequired()
-                        .ValueGeneratedOnAddOrUpdate()
                         .HasColumnType("bytea");
 
                     b.HasKey("Id");

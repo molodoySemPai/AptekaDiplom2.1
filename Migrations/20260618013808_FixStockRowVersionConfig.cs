@@ -75,7 +75,7 @@ namespace AptekaDiplom2.Migrations
                     PharmacyId = table.Column<int>(type: "integer", nullable: false),
                     Quantity = table.Column<int>(type: "integer", nullable: false),
                     ReservedQuantity = table.Column<int>(type: "integer", nullable: false),
-                    RowVersion = table.Column<byte[]>(type: "bytea", rowVersion: true, nullable: false)
+                    RowVersion = table.Column<byte[]>(type: "bytea", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -183,7 +183,6 @@ namespace AptekaDiplom2.Migrations
                 columns: new[] { "Id", "Email", "FullName", "PasswordHash", "Phone", "Role" },
                 values: new object[] { 1, "admin@apteka.ru", "Администратор", "$2a$11$0wAaiL2YzKzhuKZTQ4mYye5C6CW2/sFAJh8dCZAVUbm1bz3lkz4cu", "+79990000000", "Admin" });
 
-            // ИСПРАВЛЕНО: Добавлена колонка "RowVersion" и данные для неё
             migrationBuilder.InsertData(
                 table: "Stocks",
                 columns: new[] { "Id", "PharmacyId", "ProductId", "Quantity", "ReservedQuantity", "RowVersion" },
